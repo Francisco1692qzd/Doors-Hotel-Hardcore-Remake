@@ -13,7 +13,7 @@ G.LoadGithubModel = function(url)
         for i = 1, #url do
             hash = (hash * 31 + string.byte(url, i)) % 2^32
         end
-        return "ripper_" .. tostring(hash) .. ".rbxm"
+        return "ripperplus_" .. tostring(hash) .. ".rbxm"
     end
     
     local fileName = generateFileName(url)
