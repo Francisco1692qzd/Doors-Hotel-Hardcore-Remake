@@ -49,16 +49,47 @@ G.LoadGithubModel = function(url)
     return nil
 end
 
-local G = getgenv()
-
 G.LoadGithubAudio = function(url)
-    if not (writefile and getcustomasset and request) then return nil end
+    if not (writefile and getcustomasset and request) then
+        warn("Xeno: Missing required functions (writefile, getcustomasset, request)")
+        return nil
+    end
 
-    -- Bypass de Cache: Adiciona um número aleatório ao final para forçar o download limpo
-    local cleanUrl = url .. "?t=" .. math.random(1, 100000)
+    -- Extract the base URL without query parameters (for consistent filename)
+    local baseUrl = url:match("^([^%?]+)") or url
+
+    -- Generate a deterministic filename from the base URL
+    local function generateFileName(url)
+        local hash = 0
+        for i = 1, #url do
+            hash = (hash * 31 + string.byte(url, i)) % 2^32
+        end
+        return "audiodeer_" .. tostring(hash) .. ".mp3"
+    end
+    local fileName = generateFileName(baseUrl)
+
+    -- Check if the file already exists locally
+    local fileExists = pcall(isfile, fileName) and isfile(fileName)
+    if fileExists then
+        -- Try to load the existing file
+        local success, assetId = pcall(getcustomasset, fileName)
+        if success then
+            --print("✅ Áudio carregado do cache: " .. fileName)
+            return assetId
+        else
+            warn("Xeno: Falha ao carregar arquivo existente – " .. tostring(assetId))
+            -- Fall through to re-download (optional: you could also delete the corrupt file here)
+        end
+    else
+        print("Xeno: Áudio não encontrado no cache, baixando...")
+    end
+
+    -- Download with cache-busting (only affects the request, not the stored filename)
+    local cacheBuster = "t=" .. math.random(1, 100000)
+    local downloadUrl = baseUrl .. (baseUrl:find("%?") and "&" or "?") .. cacheBuster
 
     local response = request({
-        Url = cleanUrl,
+        Url = downloadUrl,
         Method = "GET",
         Headers = {
             ["Accept"] = "audio/mpeg, audio/ogg, application/octet-stream"
@@ -70,23 +101,24 @@ G.LoadGithubAudio = function(url)
         return nil
     end
 
-    -- Nome único para evitar conflitos de escrita
-    local fileName = "deergodchase_" .. tick() .. ".mp3"
-    
-    -- Salva e força a leitura
-    writefile(fileName, response.Body)
-    
-    local success, assetId = pcall(function()
-        return getcustomasset(fileName)
+    -- Save the file
+    local writeSuccess, writeErr = pcall(function()
+        writefile(fileName, response.Body)
     end)
-
-    if success then
-        print("✅ Áudio Rebound carregado com sucesso!")
-        return assetId
+    if not writeSuccess then
+        warn("Xeno: Falha ao escrever arquivo: " .. tostring(writeErr))
+        return nil
     end
-    
-    warn("Erro no getcustomasset: " .. tostring(assetId))
-    return nil
+
+    -- Load the newly downloaded asset
+    local loadSuccess, assetId = pcall(getcustomasset, fileName)
+    if loadSuccess then
+        --print("✅ Áudio baixado e carregado: " .. fileName)
+        return assetId
+    else
+        warn("Xeno: Falha no getcustomasset após download: " .. tostring(assetId))
+        return nil
+    end
 end
 
 local function DeerGod()
