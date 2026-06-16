@@ -12,7 +12,7 @@ G.LoadGithubModel = function(url)
         for i = 1, #url do
             hash = (hash * 31 + string.byte(url, i)) % 2^32
         end
-        return "cease_" .. tostring(hash) .. ".rbxm"
+        return "ceaser_" .. tostring(hash) .. ".rbxm"
     end
     
     local fileName = generateFileName(url)
@@ -61,7 +61,7 @@ local function ceasetheroom()
     local currentRooms = workspace.CurrentRooms
     local entity = nil
     local killed = false
-    local rawUrl = "https://raw.githubusercontent.com/Francisco1692qzd/Doors-Hotel-Hardcore-Remake/main/cease.rbxm"
+    local rawUrl = "https://raw.githubusercontent.com/Francisco1692qzd/Doors-Hotel-Hardcore-Remake/main/ceaser.rbxm"
     local cameraShaker = require(game.ReplicatedStorage.CameraShaker)
     local camera = workspace.CurrentCamera
     local camShake = cameraShaker.new(Enum.RenderPriority.Camera.Value, function(cf)
