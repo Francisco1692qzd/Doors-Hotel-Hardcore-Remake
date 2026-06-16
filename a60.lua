@@ -1,0 +1,344 @@
+local hints = {
+    "Odd... I can't discover to who you died to..."
+}
+
+local rep = game.ReplicatedStorage
+local G = getgenv()
+
+-- [[ FORCE LOAD: Retries 20 times to bypass Roblox asset loading lag ]]
+local function loadModel(id)
+    local obj = nil
+    local attempts = 0
+    local maxAttempts = 20
+
+    while obj == nil and attempts < maxAttempts do
+        attempts = attempts + 1
+        local success, result = pcall(function()
+            return game:GetObjects("rbxassetid://" .. id)
+        end)
+
+        if success and result and result[1] then
+            obj = result[1]
+            --print("✅ Depth Model Loaded successfully on attempt: " .. attempts)
+        else
+            --warn("⚠️ Attempt " .. attempts .. " failed to load model " .. id .. ". Retrying...")
+            task.wait(0.5) -- Small breather for the engine
+        end
+    end
+
+    if not obj then
+        warn("❌ CRITICAL: Failed to load model after 20 attempts.")
+    end
+    
+    return obj
+end
+
+G.LoadGithubAudio = function(url)
+    if not (writefile and getcustomasset and request) then return nil end
+
+    -- Generate consistent filename from URL
+    local function generateFileName(url)
+        local hash = 0
+        for i = 1, #url do
+            hash = (hash * 31 + string.byte(url, i)) % 2^32
+        end
+        return "multimonster_" .. tostring(hash) .. ".mpeg"  -- Fixed: removed .mp3
+    end
+    
+    local fileName = generateFileName(url)
+    
+    -- Check if file exists and return it
+    local success, exists = pcall(function()
+        return isfile and isfile(fileName)
+    end)
+    
+    if success and exists then
+        local assetSuccess, assetId = pcall(function()
+            return getcustomasset(fileName)
+        end)
+        
+        if assetSuccess then
+            --print("✅ Áudio Rebound carregado do cache!")
+            return assetId
+        end
+    end
+
+    -- Download new audio if not exists
+    local response = request({
+        Url = url,
+        Method = "GET",
+        Headers = {
+            ["Accept"] = "audio/mpeg, audio/ogg, application/octet-stream"
+        }
+    })
+
+    if response.StatusCode ~= 200 then
+        --warn("Xeno: Falha no download. Status: " .. response.StatusCode)
+        return nil
+    end
+    
+    writefile(fileName, response.Body)
+    
+    local success, assetId = pcall(function()
+        return getcustomasset(fileName)
+    end)
+
+    if success then
+        --print("✅ Áudio Rebound carregado com sucesso!")
+        return assetId
+    end
+    
+    --warn("Erro no getcustomasset: " .. tostring(assetId))
+    return nil
+end
+
+local function isBossActive()
+    local gameData = game.ReplicatedStorage:FindFirstChild("GameData")
+    if not gameData then return false end
+    local latestRoom = gameData:FindFirstChild("LatestRoom")
+    
+    local room = latestRoom.Value
+    if room == 48 or room == 99 then return true end
+    
+    for _, sound in pairs(game.ReplicatedStorage:GetDescendants()) do
+        if sound:IsA("Sound") and sound.IsPlaying and (sound.Name:find("Music") or sound.Name == "Shade") then
+            return true
+        end
+    end
+    return false
+end
+
+task.spawn(function()
+    local camera = workspace.CurrentCamera
+    local shakerModule = game.ReplicatedStorage:FindFirstChild("CameraShaker")
+    if not shakerModule then return end
+    
+    local cameraShaker = require(shakerModule)
+    local camShake = cameraShaker.new(Enum.RenderPriority.Camera.Value, function(cf)
+        camera.CFrame = camera.CFrame * cf
+    end)
+    camShake:Start()
+
+    local gameData = game.ReplicatedStorage:WaitForChild("GameData")
+    local latestRoom = gameData:WaitForChild("LatestRoom")
+    local ambruhheight = Vector3.new(0, 3, 0)
+    local ambruhspeed = 160
+    local DEF_SPEED = 9999
+    local randomizedtimes = math.random(4, 9)
+    local killed = false
+	local PlayerGui = game.Players.LocalPlayer.PlayerGui
+
+    local entity = loadModel(15972282065) -- The 20-attempt loop starts here
+    if not entity then return end
+    
+    entity.Parent = workspace
+    local pr = entity:FindFirstChildWhichIsA("BasePart") or entity:FindFirstChildWhichIsA("MeshPart")
+    if not pr then return end
+
+    local function GetTime(dist, speed)
+        return dist / speed
+    end
+
+	spawn(function()
+		if not rep:FindFirstChild("ModulesClient") then return end
+		-- if not rep:FindFirstChild("FloorReplicated") then return end
+		local ROOT = "https://github.com/RegularVynixu/DOORS-Entity-Spawner-V2/raw/main"
+		local Assets = {
+			Repentance = LoadCustomInstance(ROOT.."/Assets/Repentance.rbxm"),
+			Earthquake = LoadCustomInstance(ROOT.."/Assets/Earthquake.rbxm")
+		}
+		local Modules = {
+			Module_Events = require(rep.ModulesClient.Module_Events :: ModuleScript),
+			Main_Game = require(PlayerGui.MainUI.Initiator.Main_Game :: ModuleScript)
+		}
+		local Storage = {
+    		Ambient = {},
+			DeathTypes = {
+				["Yellow"] = {"yellow", "curious"},
+				["Blue"] = {"blue", "guiding"}
+			}
+		}
+		local function Earthquake()
+    		Modules.Main_Game.camShaker:ShakeOnce(4, 12, 1, 5)
+    		Modules.Main_Game.camShaker:ShakeOnce(10, 2, 3, 3)
+    		Assets.Earthquake.SoundEarthquake:Play()
+    		local v5 = CollectionService:GetTagged("PartCeiling")
+    		local v6 = {}
+    		for _, v7 in v5 do
+        		local v8 = v7.Size.Magnitude * 0.7
+        		local v9 = math.clamp(v8, 0, 150)
+        		for _, v10 in Assets.Earthquake.Particles:GetChildren() do
+            		local v11 = v10:Clone()
+            		v11.Parent = v7
+            		v11:Emit(v9 / 10)
+            		v11.Enabled = true
+            		table.insert(v6, v11)
+        		end
+    		end
+    		task.wait(4)
+    		for _, v12 in v6 do
+        		v12.Enabled = false
+    		end
+		end
+		task.spawn(Earthquake)
+	end)
+
+    local function canSeeTarget(target, size)
+        if killed then return end
+        local origin = pr.Position
+        local targetPos = target.HumanoidRootPart.Position
+        local direction = (targetPos - pr.Position).unit * size
+        local ray = Ray.new(origin, direction)
+        local hit = workspace:FindPartOnRay(ray, pr)
+        
+        if hit and hit:IsDescendantOf(target) then
+            return true
+        end
+        return false
+    end
+
+    task.wait(1)
+
+    -- Kill/Shake Loop
+    task.spawn(function()
+        while entity and entity.Parent do 
+            task.wait(0.1)
+            local v = game.Players.LocalPlayer
+            if v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+                local root = v.Character.HumanoidRootPart
+                
+                if canSeeTarget(v.Character, 70) and not v.Character:GetAttribute("Hiding") then
+                    killed = true
+                    pcall(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/Francisco1692qzd/Doors-Hotel-Hardcore/refs/heads/main/wow!.lua"))() end)
+                    
+                    task.delay(1.3, function()
+                        v.Character.Humanoid.Health = 0
+                        local stats = rep:FindFirstChild("GameStats")
+                        if stats and stats:FindFirstChild("Player_".. v.Name) then
+                            stats["Player_".. v.Name].Total.DeathCause.Value = "A-60"
+                        end
+                        
+                        local remotes = rep:FindFirstChild("RemotesFolder") or rep:FindFirstChild("Bricks")
+                        if remotes and remotes:FindFirstChild("DeathHint") then
+                            if remotes.Name == "RemotesFolder" then
+                                firesignal(remotes.DeathHint.OnClientEvent, hints, "Blue")
+                            else
+                                firesignal(remotes.DeathHint.OnClientEvent, hints)
+                            end
+                        end
+                    end)
+                end
+
+                if (pr.Position - root.Position).magnitude <= 70 then
+                    camShake:ShakeOnce(43, 20, 0.1, 2.3, 1, 6)
+                end
+            end
+        end
+    end)
+
+    local gruh = workspace.CurrentRooms
+    ambruhspeed = DEF_SPEED
+
+    local function Forward()
+        local limit = latestRoom.Value
+        for i = 1, limit do
+            local room = gruh:FindFirstChild(tostring(i))
+            if room and room:FindFirstChild("Nodes") then
+                local nodes = room.Nodes:GetChildren()
+                table.sort(nodes, function(a,b) return tonumber(a.Name) < tonumber(b.Name) end)
+                for _, node in ipairs(nodes) do
+                    local distance = (pr.Position - node.Position).magnitude
+                    local jerk = game.TweenService:Create(pr, TweenInfo.new(GetTime(distance, ambruhspeed), Enum.EasingStyle.Linear), {CFrame = node.CFrame + ambruhheight})
+                    jerk:Play()
+                    jerk.Completed:Wait()
+                    if ambruhspeed ~= 160 then ambruhspeed = 160 end
+                end
+            end
+        end
+    end
+
+    local function Backward()
+        local limit = latestRoom.Value
+        for i = limit, 1, -1 do
+            local room = gruh:FindFirstChild(tostring(i))
+            if room and room:FindFirstChild("Nodes") then
+                local nodes = room.Nodes:GetChildren()
+                table.sort(nodes, function(a,b) return tonumber(a.Name) < tonumber(b.Name) end)
+                for n = #nodes, 1, -1 do
+                    local node = nodes[n]
+                    local distance = (pr.Position - node.Position).magnitude
+                    local jerk = game.TweenService:Create(pr, TweenInfo.new(GetTime(distance, ambruhspeed), Enum.EasingStyle.Linear), {CFrame = node.CFrame + ambruhheight})
+                    jerk:Play()
+                    jerk.Completed:Wait()
+                    if ambruhspeed ~= 160 then ambruhspeed = 160 end
+                end
+            end
+        end
+    end
+
+    -- --- 🏃 THE REBOUNDS ---
+    for i = 1, randomizedtimes do
+        pcall(Forward)
+        task.wait(1)
+        pcall(Backward)
+        task.wait(1)
+    end
+
+    entity:Destroy()
+
+	local stingDissapear = G.LoadGithubAudio("https://raw.githubusercontent.com/Francisco1692qzd/RevivedOldHardcore/main/Multimonster_sting.mp3.mpeg")
+	task.spawn(function()
+    	local AchievementModule = game.Players.LocalPlayer.PlayerGui:FindFirstChild("MainUI")
+    	if AchievementModule then
+        	AchievementModule = AchievementModule:FindFirstChild("Initiator")
+        	if AchievementModule then
+            	AchievementModule = AchievementModule:FindFirstChild("Main_Game")
+            	if AchievementModule then
+                	AchievementModule = AchievementModule:FindFirstChild("RemoteListener")
+                	if AchievementModule then
+                    	AchievementModule = AchievementModule:FindFirstChild("Modules")
+                    	if AchievementModule then
+                       	 	AchievementModule = AchievementModule:FindFirstChild("AchievementUnlock")
+                    	end
+                	end
+            	end
+        	end
+    	end
+    
+    	if AchievementModule == nil then return end
+    
+    	if workspace:FindFirstChild("A60Achievement") then return end
+    
+    	local modulesShared = game.ReplicatedStorage:FindFirstChild("ModulesShared")
+    	if not modulesShared then return end
+    
+    	local achievements = modulesShared:FindFirstChild("Achievements")
+    	if not achievements then return end
+    
+    	local dataModule = require(achievements)
+    	local unlockFunc = require(AchievementModule)
+    
+    	if not workspace:FindFirstChild("A60Achievement") then
+        	unlockFunc(nil, "Multimonster") 
+    	end
+    
+    	local ObtainedBadge = Instance.new("BoolValue")
+    	ObtainedBadge.Name = "A60Achievement"
+    	ObtainedBadge.Value = true
+   	 	ObtainedBadge.Parent = workspace
+	end)
+    local light = Instance.new("ColorCorrectionEffect", game.Lighting)
+    light.Brightness, light.Saturation, light.Contrast = -0.4, 0.4, -0.5
+    light.TintColor = Color3.fromRGB(255, 0, 0)
+    
+    game.TweenService:Create(light, TweenInfo.new(20), {
+        Brightness = 0, Contrast = 0, Saturation = 0, TintColor = Color3.fromRGB(255, 255, 255)
+    }):Play()
+    
+    game.Debris:AddItem(light, 20)
+    camShake:ShakeOnce(23, 45, 0, 16, 1, 6)
+	--local sting = Instance.new("Sound", workspace)
+	--sting.SoundId = stingDissapear
+	--sting.Volume = 2
+	--sting.PlaybackSpeed = 1.16
+end)
