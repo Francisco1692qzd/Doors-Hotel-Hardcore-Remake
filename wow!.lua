@@ -9,12 +9,51 @@ local hints = {
 local G = getgenv()
 
 G.LoadGithubAudio = function(url)
-    if not (writefile and getcustomasset and request) then return nil end
-    local cleanUrl = url .. "?t=" .. math.random(1, 100000)
+    if not (writefile and getcustomasset and request) then
+        warn("Xeno: Missing required functions (writefile, getcustomasset, request)")
+        return nil
+    end
+
+    -- Extract base URL without query parameters (for consistent filename)
+    local baseUrl = url:match("^([^%?]+)") or url
+
+    -- Generate a deterministic filename from the base URL
+    local function generateFileName(url)
+        local hash = 0
+        for i = 1, #url do
+            hash = (hash * 31 + string.byte(url, i)) % 2^32
+        end
+        return "audio_" .. tostring(hash) .. ".mp3"
+    end
+    local fileName = generateFileName(baseUrl)
+
+    -- 1. Check if the file already exists locally
+    local fileExists = pcall(isfile, fileName) and isfile(fileName)
+    if fileExists then
+        -- Try to load the existing file
+        local loadSuccess, assetId = pcall(getcustomasset, fileName)
+        if loadSuccess then
+            print("✅ Áudio carregado do cache: " .. fileName)
+            return assetId
+        else
+            warn("Xeno: Arquivo existente corrompido? Re-baixando...")
+            -- Optionally delete the corrupt file here (if you have delfile)
+            -- pcall(delfile, fileName)
+        end
+    else
+        print("Xeno: Áudio não encontrado no cache, baixando...")
+    end
+
+    -- 2. Download with cache-busting (only affects the request, not the saved filename)
+    local cacheBuster = "t=" .. math.random(1, 100000)
+    local downloadUrl = baseUrl .. (baseUrl:find("%?") and "&" or "?") .. cacheBuster
+
     local response = request({
-        Url = cleanUrl,
+        Url = downloadUrl,
         Method = "GET",
-        Headers = {["Accept"] = "audio/mpeg, audio/ogg, application/octet-stream"}
+        Headers = {
+            ["Accept"] = "audio/mpeg, audio/ogg, application/octet-stream"
+        }
     })
 
     if response.StatusCode ~= 200 then
@@ -22,15 +61,24 @@ G.LoadGithubAudio = function(url)
         return nil
     end
 
-    local fileName = "A60Jumpscare_" .. tick() .. ".mp3"
-    writefile(fileName, response.Body)
-    
-    local success, assetId = pcall(function()
-        return getcustomasset(fileName)
+    -- 3. Save the file
+    local writeSuccess, writeErr = pcall(function()
+        writefile(fileName, response.Body)
     end)
+    if not writeSuccess then
+        warn("Xeno: Falha ao escrever arquivo: " .. tostring(writeErr))
+        return nil
+    end
 
-    if success then return assetId end
-    return nil
+    -- 4. Load the newly downloaded asset
+    local loadSuccess, assetId = pcall(getcustomasset, fileName)
+    if loadSuccess then
+        print("✅ Áudio baixado e carregado: " .. fileName)
+        return assetId
+    else
+        warn("Xeno: Falha no getcustomasset após download: " .. tostring(assetId))
+        return nil
+    end
 end
 
 local jumpcare = Instance.new("ScreenGui")
