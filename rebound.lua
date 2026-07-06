@@ -113,6 +113,9 @@ G.LoadGithubModel = function(url)
 end
 
 local function Rebound()
+	if workspace:FindFirstChild("SeekMoving") or workspace:FindFirstChild("SeekMovingNewClone") then return end
+	if ReplicatedStorage.GameData:FindFirstChild("LatestRoom").Value == 50 then return end
+	if ReplicatedStorage.GameData:FindFirstChild("LatestRoom").Value == 100 then return end
     local repStorage = game.ReplicatedStorage
     local gameData = repStorage.GameData
     local latestRoom = gameData.LatestRoom
@@ -300,6 +303,8 @@ if isBossActive() then return end
                 end
             end
         end
+    end)
+	spawn(function()
 		while entityPart ~= nil and entity ~= nil do wait(0.8)
             local v = game.Players.LocalPlayer
             if v.Character ~= nil and v.Character.HumanoidRootPart then
@@ -308,7 +313,7 @@ if isBossActive() then return end
 				end
 			end
 		end
-    end)
+	end)
 
     if maxRebounds == 4 or maxRebounds == 2 then
         for i = latestRoom.Value, 1, -1 do
