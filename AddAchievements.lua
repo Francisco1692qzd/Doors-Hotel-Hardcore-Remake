@@ -40,9 +40,11 @@ end
 local HardcoreSurvivorAchievement = "https://github.com/Francisco1692qzd/AchievementsImages/blob/main/Door100Achievement.png"
 local SilenceAchievement = "https://github.com/Francisco1692qzd/AchievementsImages/blob/main/silenceachievement.png"
 local MultimonsterAchievement = "https://github.com/Francisco1692qzd/AchievementsImages/blob/main/a60achievement.png"
+local ReboundAchievement = "https://github.com/Francisco1692qzd/Doors-Hotel-Hardcore-Remake/blob/main/achievementrebound.png"
 local Door100Image = ImageLoader(HardcoreSurvivorAchievement)
 local silenceImage = ImageLoader(SilenceAchievement)
 local MultimonsterImage = ImageLoader(MultimonsterAchievement)
+local ReboundImage = ImageLoader(ReboundAchievement)
 
 dataModule["HardcoreSurvivor"] = {
 	GetInfo = function()
@@ -76,7 +78,7 @@ dataModule["Rebound"] = {
 			Title = "Out of Many Rebounds",
 			Desc = "Back for more!",
 			Reason = "Encounter Rebound.",
-			Image = "rbxassetid://14889947785"
+			Image = ReboundImage
 		}
 	end
 }
