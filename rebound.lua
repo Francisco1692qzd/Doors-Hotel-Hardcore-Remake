@@ -1,7 +1,7 @@
 local G = getgenv()
 local ReplicatedStorage = game.ReplicatedStorage
 local remotesFolder = nil
-local maxRebounds = 3
+local maxRebounds = 4
 
 G.LoadGithubAudio = function(url)
     if not (writefile and getcustomasset and request) then return nil end
@@ -299,15 +299,18 @@ if isBossActive() then return end
                     end)()
                 end
             end
-
-            if entityPart and (entityPart.Position - v.Character.HumanoidRootPart.Position).Magnitude <= 60 then
-                camShake:Start()
-                camShake:ShakeOnce(14, 9, 0, 2,1,6)
-            end
         end
+		while entityPart ~= nil and entity ~= nil do wait(0.8)
+            local v = game.Players.LocalPlayer
+            if v.Character ~= nil and v.Character.HumanoidRootPart then
+				if (entityPart.Position - v.Character.HumanoidRootPart.Position).magnitude <= 70 then
+					camShake:ShakeOnce(14, 9, 0, 2, 1,6)
+				end
+			end
+		end
     end)
 
-    if maxRebounds == 3 or maxRebounds == 1 then
+    if maxRebounds == 4 or maxRebounds == 2 then
         for i = latestRoom.Value, 1, -1 do
             if currentRooms:FindFirstChild(i) then
                 local room = currentRooms[i]
@@ -319,7 +322,7 @@ if isBossActive() then return end
                 end
             end
         end
-    elseif maxRebounds == 2 then
+    elseif maxRebounds == 3 then
         for i = 1, latestRoom.Value do
             if currentRooms:FindFirstChild(i) then
                 local room = currentRooms[i]
@@ -331,8 +334,20 @@ if isBossActive() then return end
                 end
             end
         end
-    else
-        for i = latestRoom.Value, 1, -1 do
+    elseif maxRebounds == 1 then
+        for i = 1, latestRoom.Value do
+            if currentRooms:FindFirstChild(i) then
+                local room = currentRooms[i]
+                if room and room:FindFirstChild("RoomExit") then
+                    local abc = room:FindFirstChild("RoomExit")
+                    local jerk = game.TweenService:Create(entityPart, TweenInfo.new(speed, Enum.EasingStyle.Sine, Enum.EasingDirection.Out, 0,false,0), {CFrame = abc.CFrame + Vector3.new(0,0.9,0)})
+                    jerk:Play()
+                    jerk.Completed:Wait()
+                end
+            end
+        end
+	else
+		for i = latestRoom.Value, 1, -1 do
             if currentRooms:FindFirstChild(i) then
                 local room = currentRooms[i]
                 if room and room:FindFirstChild("RoomEntrance") then
@@ -353,7 +368,7 @@ local function SpawnReb()
     local arrival = Instance.new("Sound")
     arrival.SoundId = rebarrival
     arrival.Parent = workspace
-    arrival.Volume = 5
+    arrival.Volume = 10
     arrival:Play() game.Debris:AddItem(arrival, 10)
     local cameraShaker = require(game.ReplicatedStorage.CameraShaker)
     local camera = workspace.CurrentCamera
