@@ -41,10 +41,14 @@ local HardcoreSurvivorAchievement = "https://github.com/Francisco1692qzd/Achieve
 local SilenceAchievement = "https://github.com/Francisco1692qzd/AchievementsImages/blob/main/silenceachievement.png"
 local MultimonsterAchievement = "https://github.com/Francisco1692qzd/AchievementsImages/blob/main/a60achievement.png"
 local ReboundAchievement = "https://github.com/Francisco1692qzd/Doors-Hotel-Hardcore-Remake/blob/main/achievementrebound.png"
+local ShockerAchievement = "https://github.com/Francisco1692qzd/Doors-Hotel-Hardcore-Remake/blob/main/AchievementShocker.png"
+local DeerGod = "https://github.com/Francisco1692qzd/Doors-Hotel-Hardcore-Remake/blob/main/DeerGod.png"
 local Door100Image = ImageLoader(HardcoreSurvivorAchievement)
 local silenceImage = ImageLoader(SilenceAchievement)
 local MultimonsterImage = ImageLoader(MultimonsterAchievement)
 local ReboundImage = ImageLoader(ReboundAchievement)
+local ShockerImage = ImageLoader(ShockerAchievement)
+local DeerGodImage = ImageLoader(DeerGod)
 
 dataModule["HardcoreSurvivor"] = {
 	GetInfo = function()
@@ -67,7 +71,7 @@ dataModule["Shocker"] = {
 			Title = "Shocking Experience",
 			Desc = "Look at me.",
 			Reason = "Encounter Shocker.",
-			Image = "rbxassetid://94319277869668"
+			Image = ShockerImage
 		}
 	end
 }
@@ -100,7 +104,7 @@ dataModule["DeerGod"] = {
 			Title = "Running for my life",
 			Desc = "Why are you running?",
 			Reason = "Encounter Dear God.",
-			Image = "rbxassetid://11394027261"
+			Image = DeerGodImage
 		}
 	end
 }
