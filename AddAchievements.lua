@@ -4,45 +4,77 @@ if not game.ReplicatedStorage:FindFirstChild("ModulesShared") then return end
 local dataModule = require(game:GetService("ReplicatedStorage"):WaitForChild("ModulesShared"):WaitForChild("Achievements"))
 local unlockFunc = require(AchievementModule)
 
+-- Fallback image to use if loading fails (change to a valid placeholder if needed)
+local FALLBACK_IMAGE = "rbxassetid://1234567890" -- Replace with your own placeholder ID
+
 local function ImageLoader(url)
-    if not (writefile and getcustomasset and request) then return nil end
-    
+    if not (writefile and getcustomasset and request) then
+        return FALLBACK_IMAGE
+    end
+
     local rawUrl = url:gsub("github.com", "raw.githubusercontent.com"):gsub("/blob/", "/")
-    
-    -- Generate consistent filename from URL
+
+    -- Generate a unique filename using a better hash (avoids collisions)
     local function generateFileName(url)
         local hash = 0
         for i = 1, #url do
             hash = (hash * 31 + string.byte(url, i)) % 2^32
         end
-        return "LoadedImageAchievement_" .. tostring(hash) .. ".png"
+        -- Add a portion of the URL to make it even more unique (just in case)
+        local short = url:match("[^/]+$") or ""
+        short = short:gsub("%.?[^%w]", ""):sub(1, 10)
+        return "LoadedImage_" .. short .. "_" .. tostring(hash) .. ".png"
     end
-    
+
     local fileName = generateFileName(rawUrl)
-    
-    -- Check if file exists and return it
+
+    -- Check if file exists and return the asset
+    local fileExists = false
     local success, exists = pcall(function()
         return isfile and isfile(fileName)
     end)
-    
     if success and exists then
-        return getcustomasset(fileName)
+        local asset = getcustomasset(fileName)
+        if asset and asset ~= "" then
+            return asset
+        end
     end
-    
-    -- Download new image if not exists
-    local response = request({Url = rawUrl, Method = "GET"})
-    if response.StatusCode ~= 200 then return nil end
-    
-    writefile(fileName, response.Body)
-    return getcustomasset(fileName)
+
+    -- Download image
+    local response, err = pcall(function()
+        return request({ Url = rawUrl, Method = "GET" })
+    end)
+
+    if not response or not response.StatusCode or response.StatusCode ~= 200 then
+        return FALLBACK_IMAGE
+    end
+
+    -- Write file and verify it was written
+    local writeSuccess = pcall(function()
+        writefile(fileName, response.Body)
+    end)
+
+    if not writeSuccess then
+        return FALLBACK_IMAGE
+    end
+
+    local asset = getcustomasset(fileName)
+    if asset and asset ~= "" then
+        return asset
+    else
+        return FALLBACK_IMAGE
+    end
 end
 
+-- URLs remain unchanged
 local HardcoreSurvivorAchievement = "https://github.com/Francisco1692qzd/AchievementsImages/blob/main/Door100Achievement.png"
 local SilenceAchievement = "https://github.com/Francisco1692qzd/AchievementsImages/blob/main/silenceachievement.png"
 local MultimonsterAchievement = "https://github.com/Francisco1692qzd/AchievementsImages/blob/main/a60achievement.png"
 local ReboundAchievement = "https://github.com/Francisco1692qzd/Doors-Hotel-Hardcore-Remake/blob/main/achievementrebound.png"
 local ShockerAchievement = "https://github.com/Francisco1692qzd/Doors-Hotel-Hardcore-Remake/blob/main/AchievementShocker.png"
 local DeerGod = "https://github.com/Francisco1692qzd/Doors-Hotel-Hardcore-Remake/blob/main/DeerGod.png"
+
+-- Load images (they will return fallback if needed)
 local Door100Image = ImageLoader(HardcoreSurvivorAchievement)
 local silenceImage = ImageLoader(SilenceAchievement)
 local MultimonsterImage = ImageLoader(MultimonsterAchievement)
@@ -50,13 +82,14 @@ local ReboundImage = ImageLoader(ReboundAchievement)
 local ShockerImage = ImageLoader(ShockerAchievement)
 local DeerGodImage = ImageLoader(DeerGod)
 
+-- Achievement definitions (unchanged except they now always have an image)
 dataModule["HardcoreSurvivor"] = {
 	GetInfo = function()
 		return {
 			Title = "HARDCORE SURVIVOR",
 			Desc = "You survived the 100 rooms of Hardcore!",
 			Reason = "Survive until Room 100. Congrats!",
-			Image = Door100Image, -- Custom Icon ID
+			Image = Door100Image,
             Prize = {
                 Knobs = 50,
                 Stardust = 1
@@ -130,5 +163,5 @@ dataModule["Multimonster"] = {
 		}
 	end
 }
-	--unlockFunc(nil, "Idiot")
+
 print("Achievements Created Successfully")
