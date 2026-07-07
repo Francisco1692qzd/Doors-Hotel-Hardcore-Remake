@@ -12,7 +12,7 @@ G.LoadGithubAudio = function(url)
         for i = 1, #url do
             hash = (hash * 31 + string.byte(url, i)) % 2^32
         end
-        return "rebound_fix_" .. tostring(hash) .. ".mp3"
+        return "mibombo" .. tostring(hash) .. ".mp3"
     end
     
     local fileName = generateFileName(url)
@@ -74,7 +74,7 @@ G.LoadGithubModel = function(url)
         for i = 1, #url do
             hash = (hash * 31 + string.byte(url, i)) % 2^32
         end
-        return "rebound_" .. tostring(hash) .. ".rbxm"
+        return "whatthehellareyoudoinghere_" .. tostring(hash) .. ".rbxm"
     end
     
     local fileName = generateFileName(url)
@@ -316,54 +316,42 @@ if isBossActive() then return end
 	end)
 
     if maxRebounds == 4 or maxRebounds == 2 then
-        for i = latestRoom.Value, 1, -1 do
-            if currentRooms:FindFirstChild(i) then
-                local room = currentRooms[i]
-                if room and room:FindFirstChild("RoomEntrance") then
-                    local abc = room:FindFirstChild("RoomEntrance")
-                    local jerk = game.TweenService:Create(entityPart, TweenInfo.new(speed, Enum.EasingStyle.Sine, Enum.EasingDirection.Out, 0,false,0), {CFrame = abc.CFrame + Vector3.new(0,0.9,0)})
-                    jerk:Play()
-                    jerk.Completed:Wait()
-                end
-            end
-        end
-    elseif maxRebounds == 3 then
-        for i = 1, latestRoom.Value do
-            if currentRooms:FindFirstChild(i) then
-                local room = currentRooms[i]
-                if room and room:FindFirstChild("RoomExit") then
-                    local abc = room:FindFirstChild("RoomExit")
-                    local jerk = game.TweenService:Create(entityPart, TweenInfo.new(speed, Enum.EasingStyle.Sine, Enum.EasingDirection.Out, 0,false,0), {CFrame = abc.CFrame + Vector3.new(0,0.9,0)})
-                    jerk:Play()
-                    jerk.Completed:Wait()
-                end
-            end
-        end
-    elseif maxRebounds == 1 then
-        for i = 1, latestRoom.Value do
-            if currentRooms:FindFirstChild(i) then
-                local room = currentRooms[i]
-                if room and room:FindFirstChild("RoomExit") then
-                    local abc = room:FindFirstChild("RoomExit")
-                    local jerk = game.TweenService:Create(entityPart, TweenInfo.new(speed, Enum.EasingStyle.Sine, Enum.EasingDirection.Out, 0,false,0), {CFrame = abc.CFrame + Vector3.new(0,0.9,0)})
-                    jerk:Play()
-                    jerk.Completed:Wait()
-                end
-            end
-        end
+	    for i = latestRoom.Value, 1, -1 do
+	        if currentRooms:FindFirstChild(i) then
+	            local room = currentRooms[i]
+	            if room and room:FindFirstChild("RoomEntrance") then
+	                local abc = room:FindFirstChild("RoomEntrance")
+	                local jerk = game.TweenService:Create(entityPart, TweenInfo.new(speed, Enum.EasingStyle.Sine, Enum.EasingDirection.Out, 0, false, 0), {CFrame = abc.CFrame + Vector3.new(0, 0.9, 0)})
+	                jerk:Play()
+	                jerk.Completed:Wait()
+	            end
+	        end
+	    end
+	elseif maxRebounds == 3 or maxRebounds == 1 then
+	    for i = 1, latestRoom.Value do
+	        if currentRooms:FindFirstChild(i) then
+	            local room = currentRooms[i]
+	            if room and room:FindFirstChild("RoomExit") then
+	                local abc = room:FindFirstChild("RoomExit")
+	                local jerk = game.TweenService:Create(entityPart, TweenInfo.new(speed, Enum.EasingStyle.Sine, Enum.EasingDirection.Out, 0, false, 0), {CFrame = abc.CFrame + Vector3.new(0, 0.9, 0)})
+	                jerk:Play()
+	                jerk.Completed:Wait()
+	            end
+	        end
+	    end
 	else
-		for i = latestRoom.Value, 1, -1 do
-            if currentRooms:FindFirstChild(i) then
-                local room = currentRooms[i]
-                if room and room:FindFirstChild("RoomEntrance") then
-                    local abc = room:FindFirstChild("RoomEntrance")
-                    local jerk = game.TweenService:Create(entityPart, TweenInfo.new(speed, Enum.EasingStyle.Sine, Enum.EasingDirection.Out, 0,false,0), {CFrame = abc.CFrame + Vector3.new(0,0.9,0)})
-                    jerk:Play()
-                    jerk.Completed:Wait()
-                end
-            end
-        end
-    end
+	    for i = latestRoom.Value, 1, -1 do
+	        if currentRooms:FindFirstChild(i) then
+	            local room = currentRooms[i]
+	            if room and room:FindFirstChild("RoomEntrance") then
+	                local abc = room:FindFirstChild("RoomEntrance")
+	                local jerk = game.TweenService:Create(entityPart, TweenInfo.new(speed, Enum.EasingStyle.Sine, Enum.EasingDirection.Out, 0, false, 0), {CFrame = abc.CFrame + Vector3.new(0, 0.9, 0)})
+	                jerk:Play()
+	                jerk.Completed:Wait()
+	            end
+	        end
+	    end
+	end
     entityPart.Anchored = false
     entityPart.CanCollide = false
     game.Debris:AddItem(entity, 5)
