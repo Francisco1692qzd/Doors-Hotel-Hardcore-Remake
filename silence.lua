@@ -118,9 +118,9 @@ local function Silence()
                     v.Character.Humanoid:TakeDamage(100)
                     game.ReplicatedStorage.GameStats["Player_".. v.Character.Name].Total.DeathCause.Value = "Silence"
                     local hints = {
-                        "You died to who you call Silence...",
-                        "It is heard when you're quiet!",
-						"It's definitely not recommended to run... but run if you can!",
+                        "You died to who you call Silence",
+                        "It's quite hard to hear but easy to see.",
+						"If you hear any breaking lamps in the distance, just run to a hiding spot.",
 						"Hiding in a far away spot should be safer."
                     }
 
