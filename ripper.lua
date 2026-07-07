@@ -7,7 +7,6 @@ G.LoadGithubModel = function(url)
         return nil
     end
     
-    -- Generate a consistent filename based on the URL
     local function generateFileName(url)
         local hash = 0
         for i = 1, #url do
@@ -18,7 +17,6 @@ G.LoadGithubModel = function(url)
     
     local fileName = generateFileName(url)
     
-    -- Check if file already exists and try to load it
     local fileExists = false
     local success, exists = pcall(function()
         return isfile and isfile(fileName)
@@ -35,7 +33,6 @@ G.LoadGithubModel = function(url)
         end
     end
     
-    -- Download new model if file doesn't exist or loading failed
     local response = request({Url = url, Method = "GET"})
     if response.StatusCode ~= 200 then return nil end
     
@@ -52,7 +49,6 @@ end
 G.LoadGithubAudio = function(url)
     if not (writefile and getcustomasset and request) then return nil end
 
-    -- Generate consistent filename from URL
     local function generateFileName(url)
         local hash = 0
         for i = 1, #url do
@@ -63,7 +59,6 @@ G.LoadGithubAudio = function(url)
     
     local fileName = generateFileName(url)
     
-    -- Check if file exists and return it
     local success, exists = pcall(function()
         return isfile and isfile(fileName)
     end)
@@ -78,7 +73,6 @@ G.LoadGithubAudio = function(url)
         end
     end
 
-    -- Bypass de Cache: Adiciona um número aleatório ao final para forçar o download limpo
     local cleanUrl = url .. "?t=" .. math.random(1, 100000)
 
     local response = request({
@@ -94,7 +88,6 @@ G.LoadGithubAudio = function(url)
         return nil
     end
     
-    -- Salva e força a leitura
     writefile(fileName, response.Body)
     
     local success, assetId = pcall(function()
@@ -102,11 +95,9 @@ G.LoadGithubAudio = function(url)
     end)
 
     if success then
-        --print("✅ Áudio Rebound carregado com sucesso!")
         return assetId
     end
     
-    --warn("Erro no getcustomasset: " .. tostring(assetId))
     return nil
 end
 
@@ -118,12 +109,12 @@ local function SPAWNHORROR()
     local latestRoom = gameData.LatestRoom
     local currentRooms = workspace.CurrentRooms
     local entity = nil
-    local ambruhspeed = 100
+    local ambruhspeed = 150
     local val = 60
-    local DEF_SPEED = 99999 -- MANTIDO original
+    local DEF_SPEED = 99999
     local storer = ambruhspeed
     local ambruhheight = Vector3.new(0,8,0)
-    --local cameraShaker = require(repStorage.CameraShaker)
+    
 	local success, result = pcall(function() return require(repStorage.CameraShaker) end)
 	if not success then warn("Module failed to load, but script is still running!") end
     local camera = workspace.CurrentCamera
@@ -134,6 +125,7 @@ local function SPAWNHORROR()
     camShake:Start()
     camShake:Shake(result.Presets.Earthquake)
 	end)
+	
 	local rawURL = "https://raw.githubusercontent.com/Francisco1692qzd/Doors-Hotel-Hardcore-Remake/main/ripperr.rbxm"
 	local gameCrashURL = "https://raw.githubusercontent.com/DripCapybara/Doors-Modes/main/HardcoreMode/game%20crash%20sound.mp3"
 	
@@ -176,13 +168,21 @@ local function SPAWNHORROR()
     slam.Volume = 10
     slam.SoundId = "rbxassetid://1837829565"
 
+    for _, sound in pairs(entityPart:GetChildren()) do
+        if (sound:IsA("Sound") and sound.Name == "Screams of dah damneddd") then
+            local dist = Instance.new("DistortionSoundEffect", sound)
+            dist.Level = 0.32
+            dist.Parent = sound
+            print("added")
+        end
+    end
+
     local function canSeeTarget(target, size)
         if killed == true then return end
 local function isBossActive()
     local room = latestRoom.Value
     if room == 50 or room == 100 then return true end
     
-    -- Check for any playing music in ReplicatedStorage that might indicate a cutscene
     for _, sound in pairs(game.ReplicatedStorage:GetDescendants()) do
         if sound:IsA("Sound") and sound.IsPlaying and (sound.Name:find("Music") or sound.Name == "Shade") then
             return true
@@ -276,9 +276,9 @@ if isBossActive() then return end
                         	game.ReplicatedStorage.GameStats["Player_" .. v.Character.Name].Total.DeathCause.Value = "Ripper"
                         	char:FindFirstChildWhichIsA("Humanoid"):TakeDamage(100)
                         	local hints = {
-                            	"You died to who you call Ripper...",
-                            	"He screams so making you know his presence is here...",
-                            	"Hide when this happens!"
+                            	"The lights turn red. Hide, now.",
+                            	"It will come back. Stay hidden until you're sure it's safe.",
+                            	"Silence doesn't mean it's gone. Wait for the door to return to normal."
                         	}
                         		if ReplicatedStorage:FindFirstChild("RemotesFolder") then
 									local remotesFolder = ReplicatedStorage:FindFirstChild("RemotesFolder")
@@ -291,7 +291,6 @@ if isBossActive() then return end
                 	end
             	end
             	if v.Character ~= nil and v.Character.HumanoidRootPart and (entityPart.Position - v.Character.HumanoidRootPart.Position).magnitude <= 60 then
-                	--camShake:Start()
                 	camShake:ShakeOnce(15, 25, 0, 2, 1, 6)
             	end
             	if breakMove then break end
@@ -299,11 +298,6 @@ if isBossActive() then return end
     	end)
 	end)
 
-    -- MOVIMENTO POR NODES ORIGINAL
-    --[[entityPart.Ambush.SoundId = "rbxassetid://6963538865"
-    entityPart.Ambush.PlaybackSpeed = 0.37
-    entityPart.Ambush:Stop()
-    entityPart.Ambush.Volume = 10--]]
     entityPart.Rushing:Stop()
     entityPart.RushingFar:Stop()
     wait(8)
@@ -314,46 +308,86 @@ if isBossActive() then return end
     ambruhspeed = DEF_SPEED
 
 	pcall(function()
-    	for i = 1, latestRoom.Value do
-        	local room = currentRooms:FindFirstChild(tostring(i))
-        	if room and room:FindFirstChild("Nodes") then
-            	local nodes = room:WaitForChild("Nodes", 5)
-           	 	for v_idx = 1, #nodes:GetChildren() do
-                	local node = nodes:FindFirstChild(tostring(v_idx))
-                	if node then
-                    	if breakMove then break end
-                    	local dist = (entityPart.Position - node.Position).magnitude
-                    	local bruh = game.TweenService:Create(entityPart, TweenInfo.new(GetTime(dist, ambruhspeed), Enum.EasingStyle.Linear, Enum.EasingDirection.Out, 0,false,0), {CFrame = node.CFrame + ambruhheight})
-                    	bruh:Play()
-                    	bruh.Completed:Wait()
-                    	ambruhspeed = storer
-                    	if room.Name == nodes.Parent.Name then
-                        	pcall(function() room.Door.ClientOpen:FireServer() end)
-                    	end
-	                end
-            	end
-        	end
-			local soundHit = Instance.new("Sound") game.Debris:AddItem(soundHit, 3)
-			soundHit.SoundId = "rbxassetid://5188314808"
-			soundHit.Volume = 7
-			soundHit:Play()
-			camShake:ShakeOnce(10, 8, 0, 4, 1, 6)
-        	if breakMove then break end
-    	end
+        -- Go through ALL rooms from 1 to latestRoom
+        for i = 1, latestRoom.Value do
+            local room = currentRooms:FindFirstChild(tostring(i))
+            if room and room:FindFirstChild("Nodes") then
+                local nodes = room:WaitForChild("Nodes", 5)
+                for v_idx = 1, #nodes:GetChildren() do
+                    local node = nodes:FindFirstChild(tostring(v_idx))
+                    if node then
+                        if breakMove then break end
+                        local dist = (entityPart.Position - node.Position).magnitude
+                        local bruh = game.TweenService:Create(entityPart, TweenInfo.new(GetTime(dist, ambruhspeed), Enum.EasingStyle.Linear, Enum.EasingDirection.Out, 0,false,0), {CFrame = node.CFrame + ambruhheight})
+                        bruh:Play()
+                        bruh.Completed:Wait()
+                        ambruhspeed = storer
+                        if room.Name == nodes.Parent.Name then
+                            pcall(function() room.Door.ClientOpen:FireServer() end)
+                        end
+                    end
+                end
+            end
+            local soundHit = Instance.new("Sound") game.Debris:AddItem(soundHit, 3)
+            soundHit.SoundId = "rbxassetid://5188314808"
+            soundHit.Volume = 10
+            soundHit:Play()
+            camShake:ShakeOnce(10, 8, 0, 4, 1, 6)
+            if breakMove then break end
+        end
+        
+        -- Now REBOUND within the CURRENT ROOM only
+        if not breakMove then
+            local currentRoom = latestRoom.Value
+            local room = currentRooms:FindFirstChild(tostring(currentRoom))
+            
+            if room and room:FindFirstChild("Nodes") then
+                local nodes = room:WaitForChild("Nodes", 5)
+                
+                -- Go backwards through the current room
+                for v_idx = #nodes:GetChildren(), 1, -1 do
+                    local node = nodes:FindFirstChild(tostring(v_idx))
+                    if node then
+                        if breakMove then break end
+                        local dist = (entityPart.Position - node.Position).magnitude
+                        local bruh = game.TweenService:Create(entityPart, TweenInfo.new(GetTime(dist, ambruhspeed), Enum.EasingStyle.Linear, Enum.EasingDirection.Out, 0,false,0), {CFrame = node.CFrame + ambruhheight})
+                        bruh:Play()
+                        bruh.Completed:Wait()
+                        ambruhspeed = storer
+                    end
+                end
+                
+                -- Then go forward through the current room again
+                if not breakMove then
+                    for v_idx = 1, #nodes:GetChildren() do
+                        local node = nodes:FindFirstChild(tostring(v_idx))
+                        if node then
+                            if breakMove then break end
+                            local dist = (entityPart.Position - node.Position).magnitude
+                            local bruh = game.TweenService:Create(entityPart, TweenInfo.new(GetTime(dist, ambruhspeed), Enum.EasingStyle.Linear, Enum.EasingDirection.Out, 0,false,0), {CFrame = node.CFrame + ambruhheight})
+                            bruh:Play()
+                            bruh.Completed:Wait()
+                            ambruhspeed = storer
+                        end
+                    end
+                end
+            end
+        end
 	end)
 
 	local soundHit = Instance.new("Sound") game.Debris:AddItem(soundHit, 3)
 	soundHit.SoundId = "rbxassetid://5188314808"
-	soundHit.Volume = 7
+	soundHit.Volume = 10
 	soundHit:Play()
 	camShake:ShakeOnce(10, 8, 0, 4, 2, 6)
-	task.wait(soundHit.TimeLength + 1.2)
+	task.wait(soundHit.TimeLength + 0.35)
+    camShake:Shake(result.Presets.Explosion)
     camShake:Shake(result.Presets.Explosion)
     pcall(function() workspace.CurrentRooms[latestRoom.Value].Door.ClientOpen:FireServer() end)
     slam:Play()
     slam.Volume = 10500
     local dist = Instance.new("DistortionSoundEffect", slam)
-    dist.Level = 0.3
+    dist.Level = 0.6
     wait(1)
     entityPart.Anchored = false
     entityPart.CanCollide = false
