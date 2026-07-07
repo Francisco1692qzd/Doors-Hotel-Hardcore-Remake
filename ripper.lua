@@ -333,10 +333,21 @@ if isBossActive() then return end
 	                end
             	end
         	end
+			local soundHit = Instance.new("Sound") game.Debris:AddItem(soundHit, 3)
+			soundHit.SoundId = "rbxassetid://5188314808"
+			soundHit.Volume = 7
+			soundHit:Play()
+			camShake:Shake(result.Presets.Explosion)
         	if breakMove then break end
     	end
 	end)
-	
+
+	local soundHit = Instance.new("Sound") game.Debris:AddItem(soundHit, 3)
+	soundHit.SoundId = "rbxassetid://5188314808"
+	soundHit.Volume = 7
+	soundHit:Play()
+	camShake:ShakeOnce(10, 15, 0, 1.5, 1, 6)
+	task.wait(soundHit.TimeLength + 0.445)
     camShake:Shake(result.Presets.Explosion)
     pcall(function() workspace.CurrentRooms[latestRoom.Value].Door.ClientOpen:FireServer() end)
     slam:Play()
