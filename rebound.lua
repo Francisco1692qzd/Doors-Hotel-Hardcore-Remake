@@ -279,10 +279,10 @@ if isBossActive() then return end
                                 "Hide when this happens!"
                             })--]]
 							local hints = {
-                                "You died to the entity designated as Rebound. It rushes through the rooms in reverse, so always prepare for it to come from the door ahead!",
-                                "It could trick you by coming through the previous doors in the next few seconds! Stay alert, as it bounces back and forth up to 3 times.",
-                                "Whenever this happens, do not go forward! Stay in your desired hiding spot and wait for the entity's final appearance. It will come from the door ahead, so be ready to hide when it does!"
-                            }
+							    "Rebound rushes in reverse. Watch the door ahead—it's coming from there!",
+							    "It can bounce back up to 4 times. Don't move too soon, it might return.",
+							    "Stay hidden until it finishes. The final rush always comes from the front door.",
+							}
 
                             while game["Run Service"].RenderStepped:Wait() do
                                 if ReplicatedStorage:FindFirstChild("RemotesFolder") then
