@@ -74,7 +74,7 @@ G.LoadGithubModel = function(url)
         for i = 1, #url do
             hash = (hash * 31 + string.byte(url, i)) % 2^32
         end
-        return "whatthehellareyoudoinghere_" .. tostring(hash) .. ".rbxm"
+        return "whatthehellareyoudoingherea_" .. tostring(hash) .. ".rbxm"
     end
     
     local fileName = generateFileName(url)
@@ -134,7 +134,7 @@ local function Rebound()
     --[[local reboundId = "rbxassetid://12254145022"
     local entity = game:GetObjects(reboundId)[1]
     entity.Parent = workspace--]]
-	local rawURL = "https://raw.githubusercontent.com/Francisco1692qzd/Doors-Hotel-Hardcore-Remake/main/reboundremake.rbxm"
+	local rawURL = "https://raw.githubusercontent.com/Francisco1692qzd/Doors-Hotel-Hardcore-Remake/main/rebreb.rbxm"
 	
 	if G.LoadGithubModel then
         entity = G.LoadGithubModel(rawURL)
