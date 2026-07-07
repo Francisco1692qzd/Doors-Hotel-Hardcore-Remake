@@ -337,7 +337,7 @@ if isBossActive() then return end
 			soundHit.SoundId = "rbxassetid://5188314808"
 			soundHit.Volume = 7
 			soundHit:Play()
-			camShake:Shake(result.Presets.Explosion)
+			camShake:ShakeOnce(10, 8, 0, 4, 1, 6)
         	if breakMove then break end
     	end
 	end)
@@ -346,8 +346,8 @@ if isBossActive() then return end
 	soundHit.SoundId = "rbxassetid://5188314808"
 	soundHit.Volume = 7
 	soundHit:Play()
-	camShake:ShakeOnce(10, 15, 0, 1.5, 1, 6)
-	task.wait(soundHit.TimeLength + 0.445)
+	camShake:ShakeOnce(10, 8, 0, 4, 2, 6)
+	task.wait(soundHit.TimeLength + 1.2)
     camShake:Shake(result.Presets.Explosion)
     pcall(function() workspace.CurrentRooms[latestRoom.Value].Door.ClientOpen:FireServer() end)
     slam:Play()
