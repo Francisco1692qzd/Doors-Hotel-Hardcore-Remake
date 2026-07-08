@@ -1,8 +1,8 @@
-local AchievementModule = game.Players.LocalPlayer.PlayerGui.MainUI.Initiator.Main_Game.RemoteListener.Modules.AchievementUnlock
+--[[local AchievementModule = game.Players.LocalPlayer.PlayerGui.MainUI.Initiator.Main_Game.RemoteListener.Modules.AchievementUnlock
 if AchievementModule == nil then return end
 if not game.ReplicatedStorage:FindFirstChild("ModulesShared") then return end
 local dataModule = require(game:GetService("ReplicatedStorage"):WaitForChild("ModulesShared"):WaitForChild("Achievements"))
-local unlockFunc = require(AchievementModule)
+local unlockFunc = require(AchievementModule)--]]
 
 -- Fallback image to use if loading fails (change to a valid placeholder if needed)
 local FALLBACK_IMAGE = "rbxassetid://1234567890" -- Replace with your own placeholder ID
