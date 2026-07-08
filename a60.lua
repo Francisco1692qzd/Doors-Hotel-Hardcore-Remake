@@ -5,6 +5,77 @@ local hints = {
 local rep = game.ReplicatedStorage
 local G = getgenv()
 
+-- Standalone functions for achievements
+local function getDataModule()
+    local function tryRequire(path)
+        local success, mod = pcall(require, path)
+        if success then return mod end
+        return nil
+    end
+
+    if tostring(game.PlaceId) == "10549820578" then
+        return tryRequire(game:GetService("ReplicatedStorage"):WaitForChild("Achievements"))
+    else
+        local shared = game.ReplicatedStorage:FindFirstChild("ModulesShared")
+        if not shared then return nil end
+        local achMod = shared:FindFirstChild("Achievements")
+        if not achMod then return nil end
+        return tryRequire(achMod)
+    end
+end
+
+local function getUnlockUI()
+    local gui = game.Players.LocalPlayer.PlayerGui
+    local path = gui:FindFirstChild("MainUI")
+    if path then path = path:FindFirstChild("Initiator") end
+    if path then path = path:FindFirstChild("Main_Game") end
+    if path then path = path:FindFirstChild("RemoteListener") end
+    if path then path = path:FindFirstChild("Modules") end
+    if path then path = path:FindFirstChild("AchievementUnlock") end
+    if not path then return nil end
+    local success, func = pcall(require, path)
+    return success and func or nil
+end
+
+-- Global function to add custom achievement
+function AddAchievement(title, desc, reason, image, achname)
+    local dataModule = getDataModule()
+    if not dataModule then return end
+
+    dataModule[achname] = {
+        GetInfo = function()
+            return {
+                Title = title,
+                Desc = desc,
+                Reason = reason,
+                Image = image
+            }
+        end
+    }
+end
+
+-- Global function to trigger popup
+function GiveAchievement(name)
+    local dataModule = getDataModule()
+    if not dataModule then
+        warn("Data module not found")
+        return
+    end
+
+    if not dataModule[name] then
+        warn("Achievement key '"..name.."' does not exist.")
+        return
+    end
+
+    local unlockUI = getUnlockUI()
+    if not unlockUI then
+        warn("UI unlock function not found")
+        return
+    end
+
+    unlockUI(game.Players.LocalPlayer, name)
+end
+
 -- [[ FORCE LOAD: Retries 20 times to bypass Roblox asset loading lag ]]
 local function loadModel(id)
     local obj = nil
@@ -288,7 +359,7 @@ task.spawn(function()
 
 	local stingDissapear = G.LoadGithubAudio("https://raw.githubusercontent.com/Francisco1692qzd/RevivedOldHardcore/main/Multimonster_sting.mp3.mpeg")
 	task.spawn(function()
-    	local AchievementModule = game.Players.LocalPlayer.PlayerGui:FindFirstChild("MainUI")
+    	--[[local AchievementModule = game.Players.LocalPlayer.PlayerGui:FindFirstChild("MainUI")
     	if AchievementModule then
         	AchievementModule = AchievementModule:FindFirstChild("Initiator")
         	if AchievementModule then
@@ -325,7 +396,8 @@ task.spawn(function()
     	local ObtainedBadge = Instance.new("BoolValue")
     	ObtainedBadge.Name = "A60Achievement"
     	ObtainedBadge.Value = true
-   	 	ObtainedBadge.Parent = workspace
+   	 	ObtainedBadge.Parent = workspace --]]
+		GiveAchievement("Multimonster")
 	end)
     local light = Instance.new("ColorCorrectionEffect", game.Lighting)
     light.Brightness, light.Saturation, light.Contrast = -0.4, 0.4, -0.5
