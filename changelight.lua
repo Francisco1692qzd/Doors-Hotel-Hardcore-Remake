@@ -164,6 +164,7 @@ print("[Debug] Processed", roomsProcessed, "existing rooms.")
 gruh.ChildAdded:Connect(function(child)
     print("[Debug] New child added to CurrentRooms:", child.Name)
     if child:IsA("Model") then
+        task.wait(0.5)
         ProcessRoom(child)
     end
 end)
