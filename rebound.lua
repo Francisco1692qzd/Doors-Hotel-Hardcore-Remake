@@ -112,6 +112,77 @@ G.LoadGithubModel = function(url)
     return nil
 end
 
+-- Standalone functions for achievements
+local function getDataModule()
+    local function tryRequire(path)
+        local success, mod = pcall(require, path)
+        if success then return mod end
+        return nil
+    end
+
+    if tostring(game.PlaceId) == "10549820578" then
+        return tryRequire(game:GetService("ReplicatedStorage"):WaitForChild("Achievements"))
+    else
+        local shared = game.ReplicatedStorage:FindFirstChild("ModulesShared")
+        if not shared then return nil end
+        local achMod = shared:FindFirstChild("Achievements")
+        if not achMod then return nil end
+        return tryRequire(achMod)
+    end
+end
+
+local function getUnlockUI()
+    local gui = game.Players.LocalPlayer.PlayerGui
+    local path = gui:FindFirstChild("MainUI")
+    if path then path = path:FindFirstChild("Initiator") end
+    if path then path = path:FindFirstChild("Main_Game") end
+    if path then path = path:FindFirstChild("RemoteListener") end
+    if path then path = path:FindFirstChild("Modules") end
+    if path then path = path:FindFirstChild("AchievementUnlock") end
+    if not path then return nil end
+    local success, func = pcall(require, path)
+    return success and func or nil
+end
+
+-- Global function to add custom achievement
+function AddAchievement(title, desc, reason, image, achname)
+    local dataModule = getDataModule()
+    if not dataModule then return end
+
+    dataModule[achname] = {
+        GetInfo = function()
+            return {
+                Title = title,
+                Desc = desc,
+                Reason = reason,
+                Image = image
+            }
+        end
+    }
+end
+
+-- Global function to trigger popup
+function GiveAchievement(name)
+    local dataModule = getDataModule()
+    if not dataModule then
+        warn("Data module not found")
+        return
+    end
+
+    if not dataModule[name] then
+        warn("Achievement key '"..name.."' does not exist.")
+        return
+    end
+
+    local unlockUI = getUnlockUI()
+    if not unlockUI then
+        warn("UI unlock function not found")
+        return
+    end
+
+    unlockUI(game.Players.LocalPlayer, name)
+end
+
 local function Rebound()
 	if workspace:FindFirstChild("SeekMoving") or workspace:FindFirstChild("SeekMovingNewClone") then return end
 	if ReplicatedStorage.GameData:FindFirstChild("LatestRoom").Value == 50 then return end
@@ -387,14 +458,14 @@ local function SpawnReb()
         pcall(Rebound)
         maxRebounds = maxRebounds - 1
     end
-	local AchievementModule = game.Players.LocalPlayer.PlayerGui.MainUI.Initiator.Main_Game.RemoteListener.Modules.AchievementUnlock
+	--[[local AchievementModule = game.Players.LocalPlayer.PlayerGui.MainUI.Initiator.Main_Game.RemoteListener.Modules.AchievementUnlock
 	if AchievementModule == nil then return end
 	if workspace:FindFirstChild("ReboundAchievement") then return end
 	if not game.ReplicatedStorage:FindFirstChild("ModulesShared") then return end
 	local dataModule = require(game:GetService("ReplicatedStorage"):WaitForChild("ModulesShared"):WaitForChild("Achievements"))
-	local unlockFunc = require(AchievementModule)
+	local unlockFunc = require(AchievementModule)--]]
 	if not workspace:FindFirstChild("ReboundAchievement") then
-		unlockFunc(nil, "Rebound") 
+		GiveAchievement("Rebound")
 	end
 	local ObtainedBadge = Instance.new("BoolValue")
 	ObtainedBadge.Name = "ReboundAchievement"
