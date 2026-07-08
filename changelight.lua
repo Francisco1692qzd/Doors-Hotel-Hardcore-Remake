@@ -71,6 +71,10 @@ local function ProcessRoom(room)
         return
     end
     
+    if room:GetAttribute("Ambient") == Color3.fromRGB(0,0,0) then
+        return
+    end
+    
     local assets = room:FindFirstChild("Assets")
     if not assets then
         print("[Debug] Room has no 'Assets' folder, skipping.")
