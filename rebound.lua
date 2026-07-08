@@ -152,7 +152,7 @@ local function Rebound()
     entityPart.CFrame = GetLastRoom().RoomExit.CFrame + Vector3.new(0,0.6,0)
     entityPart.CanCollide = false
     entityPart.Anchored = true
-	entityPart.Sound:Stop()
+	--entityPart.Sound:Stop()
     wait(4)
 	if workspace:FindFirstChild("SeekMovingNewClone") or workspace:FindFirstChild("SeekMoving") then
 		entityPart.CanCollide = false
