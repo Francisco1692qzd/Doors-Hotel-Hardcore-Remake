@@ -83,7 +83,7 @@ local ShockerImage = ImageLoader(ShockerAchievement)
 local DeerGodImage = ImageLoader(DeerGod)
 
 -- Achievement definitions (unchanged except they now always have an image)
-dataModule["HardcoreSurvivor"] = {
+--[[dataModule["HardcoreSurvivor"] = {
 	GetInfo = function()
 		return {
 			Title = "HARDCORE SURVIVOR",
@@ -163,5 +163,15 @@ dataModule["Multimonster"] = {
 		}
 	end
 }
+--]]
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Francisco1692qzd/Doors-Hotel-Hardcore-Remake/refs/heads/main/AchievementsModule.lua"))()
+
+AddAchievement("Am I... still alive?", "You're a game beater professional.", "Beat all 100 DOORS with suffer.", "HardcoreSurvivor")
+AddAchievement("A Nostalgic Fright", "So many familiar faces!", "Encounter Multimonster (A-60)", "Multimonster")
+AddAchievement("Careful Listener", "Shhh.. do you hear that?", "Encounter Silence.", "Silence")
+AddAchievement("Out of Many Rebounds", "Back for more!", "Encounter Rebound.", "Rebound")
+AddAchievement("Torn Apart", "Dont leave to early..", "Encounter Ripper.", "Ripper")
+AddAchievement("Last chance to look away", "Why are you running?", "Encounter Dear god.", "DeerGod")
+AddAchievement("Shocking Experience", "Look at me.", "Encounter Shocker.", "Shocker")
 
 print("Achievements Created Successfully")
