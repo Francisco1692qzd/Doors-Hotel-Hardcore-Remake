@@ -1,6 +1,6 @@
 -- No early returns – let the functions handle missing modules gracefully
 
-local FALLBACK_IMAGE = "rbxassetid://1234567890" -- Replace with a valid placeholder
+local FALLBACK_IMAGE = "rbxassetid://1234567890"  -- change to a real asset ID
 
 local function ImageLoader(url)
     if not (writefile and getcustomasset and request) then
@@ -21,7 +21,7 @@ local function ImageLoader(url)
 
     local fileName = generateFileName(rawUrl)
 
-    local fileExists = false
+    -- Check if already cached
     local success, exists = pcall(function()
         return isfile and isfile(fileName)
     end)
@@ -32,19 +32,26 @@ local function ImageLoader(url)
         end
     end
 
-    local response, err = pcall(function()
+    -- Download with proper pcall handling
+    local ok, result = pcall(function()
         return request({ Url = rawUrl, Method = "GET" })
     end)
 
-    if not response or not response.StatusCode or response.StatusCode ~= 200 then
+    if not ok then
         return FALLBACK_IMAGE
     end
 
-    local writeSuccess = pcall(function()
+    local response = result  -- now it's the actual response table
+    if not response.StatusCode or response.StatusCode ~= 200 then
+        return FALLBACK_IMAGE
+    end
+
+    -- Write file
+    local writeOk = pcall(function()
         writefile(fileName, response.Body)
     end)
 
-    if not writeSuccess then
+    if not writeOk then
         return FALLBACK_IMAGE
     end
 
