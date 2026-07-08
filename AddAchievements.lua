@@ -239,7 +239,7 @@ dataModule["Multimonster"] = {
 	end
 }
 --]]
-loadstring(game:HttpGet("https://raw.githubusercontent.com/Francisco1692qzd/Doors-Hotel-Hardcore-Remake/refs/heads/main/AchievementsModule.lua"))()
+--loadstring(game:HttpGet("https://raw.githubusercontent.com/Francisco1692qzd/Doors-Hotel-Hardcore-Remake/refs/heads/main/AchievementsModule.lua"))()
 
 AddAchievement("Am I... still alive?", "You're a game beater professional.", "Beat all 100 DOORS with suffer.", Door100Image, "HardcoreSurvivor")
 AddAchievement("A Nostalgic Fright", "So many familiar faces!", "Encounter Multimonster (A-60)", MultimonsterImage, "Multimonster")
