@@ -1,7 +1,7 @@
 --[[
     HARDCORE MODE – OLD‑SCHOOL SYNC (FIXED INTERVALS, NO MASTER)
     All players use the same start time and hardcoded offsets.
-    No network chatter except one shared NumberValue.
+    Robust error handling via pcalls.
 ]]
 
 repeat task.wait() until game:IsLoaded()
@@ -39,11 +39,14 @@ local entityURLs = {
 }
 
 local function LoadEntity(name)
-    if workspace:FindFirstChild("SeekMoving") or workspace:FindFirstChild("SeekMovingNewClone") then return end   -- prevent during Seek
+    if workspace:FindFirstChild("SeekMoving") then return end
     local url = entityURLs[name]
     if url then
         task.spawn(function()
-            pcall(function() loadstring(game:HttpGet(url))() end)
+            pcall(function()
+                local script = game:HttpGet(url)
+                loadstring(script)()
+            end)
         end)
     end
 end
@@ -120,6 +123,16 @@ else
     ShowCaption("EXECUTOR: Already Running.", 3)
     return
 end
+
+-- ============================================
+-- LOAD EXTERNAL MODULES (WITH PCALL)
+-- ============================================
+pcall(function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/Francisco1692qzd/OverridenEntitiesMode/refs/heads/main/nodes.lua"))()
+end)
+pcall(function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/Francisco1692qzd/Doors-Hotel-Hardcore-Remake/refs/heads/main/AddAchievements.lua"))()
+end)
 
 -- Change music speed (optional)
 pcall(function()
@@ -318,121 +331,124 @@ local INTERVALS = {
 local opened = false
 local GaveAchievement = false
 
-LatestRoom.Changed:Connect(function()
-    if not opened and LatestRoom.Value == 1 then
-        opened = true
-        startTimeValue.Value = workspace:GetServerTimeNow()
+-- Wrap the whole door handler in a pcall to prevent crashes
+pcall(function()
+    LatestRoom.Changed:Connect(function()
+        if not opened and LatestRoom.Value == 1 then
+            opened = true
+            startTimeValue.Value = workspace:GetServerTimeNow()
 
-        task.spawn(ShowSmoothCredits)
-        ShowCaption("Hardcore Initiated. | True MP Sync: ON", 5)
-        task.wait(3)
-        ShowCaption("Have fun " .. Player.Name .. ".", 4)
-        task.wait(4)
-        ShowCaption("Stamina: Hold Q (or tap button) to sprint.", 5)
-        task.wait(4)
-        ShowCaption("If you can't sprint, crouch in a closet then leave.", 6)
-        task.wait(4)
-        ShowCaption("Big Thanks to Ostah for the A-60 and Frostbite models.", 6)
-        task.wait(3)
+            task.spawn(ShowSmoothCredits)
+            ShowCaption("Hardcore Initiated. | True MP Sync: ON", 5)
+            task.wait(3)
+            ShowCaption("Have fun " .. Player.Name .. ".", 4)
+            task.wait(4)
+            ShowCaption("Stamina: Hold Q (or tap button) to sprint.", 5)
+            task.wait(4)
+            ShowCaption("If you can't sprint, crouch in a closet then leave.", 6)
+            task.wait(4)
+            ShowCaption("Big Thanks to Ostah for the A-60 and Frostbite models.", 6)
+            task.wait(3)
 
-        CreateSprintButton()
+            CreateSprintButton()
 
-        -- ============================================
-        -- SPAWN LOOPS (all players run these)
-        -- ============================================
-        -- Ripper (door wait)
-        task.spawn(function()
-            local c = 0
-            while true do
-                SyncWait(c + 80); LatestRoom.Changed:Wait(); LoadEntity("Ripper")
-                SyncWait(c + 167); LatestRoom.Changed:Wait(); LoadEntity("Ripper")
-                c = c + 300
-                task.wait(INTERVALS.RIPPER)
-            end
-        end)
-
-        -- Rebound (door wait)
-        task.spawn(function()
-            local c = 0
-            while true do
-                SyncWait(c + 670); LatestRoom.Changed:Wait(); LoadEntity("Rebound")
-                SyncWait(c + 1100); LatestRoom.Changed:Wait(); LoadEntity("Rebound")
-                c = c + 930
-                task.wait(INTERVALS.REBOUND)
-            end
-        end)
-
-        -- Frostbite (door wait, only after room 20)
-        task.spawn(function()
-            local c = 0
-            while true do
-                SyncWait(c + 270); 
-                if LatestRoom.Value >= 20 then
-                    LatestRoom.Changed:Wait()
-                    LoadEntity("Frostbite")
+            -- ============================================
+            -- SPAWN LOOPS (all players run these)
+            -- ============================================
+            -- Ripper (door wait)
+            task.spawn(function()
+                local c = 0
+                while true do
+                    SyncWait(c + 80); LatestRoom.Changed:Wait(); LoadEntity("Ripper")
+                    SyncWait(c + 167); LatestRoom.Changed:Wait(); LoadEntity("Ripper")
+                    c = c + 300
+                    task.wait(INTERVALS.RIPPER)
                 end
-                SyncWait(c + 645);
-                if LatestRoom.Value >= 20 then
-                    LatestRoom.Changed:Wait()
-                    LoadEntity("Frostbite")
+            end)
+
+            -- Rebound (door wait)
+            task.spawn(function()
+                local c = 0
+                while true do
+                    SyncWait(c + 670); LatestRoom.Changed:Wait(); LoadEntity("Rebound")
+                    SyncWait(c + 1100); LatestRoom.Changed:Wait(); LoadEntity("Rebound")
+                    c = c + 930
+                    task.wait(INTERVALS.REBOUND)
                 end
-                c = c + 900
-                task.wait(INTERVALS.FROSTBITE)
-            end
-        end)
+            end)
 
-        -- A60 (immediate, no door wait)
-        task.spawn(function()
-            local c = 0
-            while true do
-                SyncWait(c + 730); LoadEntity("A60")
-                SyncWait(c + 1200); LoadEntity("A60")
-                c = c + 910
-                task.wait(INTERVALS.A60)
-            end
-        end)
+            -- Frostbite (door wait, only after room 20)
+            task.spawn(function()
+                local c = 0
+                while true do
+                    SyncWait(c + 270); 
+                    if LatestRoom.Value >= 20 then
+                        LatestRoom.Changed:Wait()
+                        LoadEntity("Frostbite")
+                    end
+                    SyncWait(c + 645);
+                    if LatestRoom.Value >= 20 then
+                        LatestRoom.Changed:Wait()
+                        LoadEntity("Frostbite")
+                    end
+                    c = c + 900
+                    task.wait(INTERVALS.FROSTBITE)
+                end
+            end)
 
-        -- Silence (immediate)
-        task.spawn(function()
-            local c = 0
-            while true do
-                SyncWait(c + 850); LoadEntity("Silence")
-                SyncWait(c + 1530); LoadEntity("Silence")
-                c = c + 600
-                task.wait(INTERVALS.SILENCE)
-            end
-        end)
+            -- A60 (immediate, no door wait)
+            task.spawn(function()
+                local c = 0
+                while true do
+                    SyncWait(c + 730); LoadEntity("A60")
+                    SyncWait(c + 1200); LoadEntity("A60")
+                    c = c + 910
+                    task.wait(INTERVALS.A60)
+                end
+            end)
 
-        -- DeerGod (immediate)
-        task.spawn(function()
-            local c = 0
-            while true do
-                SyncWait(c + 1500); LoadEntity("DeerGod")
-                c = c + 2100
-                task.wait(INTERVALS.DEERGOD)
-            end
-        end)
+            -- Silence (immediate)
+            task.spawn(function()
+                local c = 0
+                while true do
+                    SyncWait(c + 850); LoadEntity("Silence")
+                    SyncWait(c + 1530); LoadEntity("Silence")
+                    c = c + 600
+                    task.wait(INTERVALS.SILENCE)
+                end
+            end)
 
-        -- Shocker (local random, independent)
-        task.spawn(function()
-            while true do
-                task.wait(math.random(INTERVALS.SHOCKER_MIN, INTERVALS.SHOCKER_MAX))
-                LoadEntity("Shocker")
-            end
-        end)
+            -- DeerGod (immediate)
+            task.spawn(function()
+                local c = 0
+                while true do
+                    SyncWait(c + 1500); LoadEntity("DeerGod")
+                    c = c + 2100
+                    task.wait(INTERVALS.DEERGOD)
+                end
+            end)
 
-        print("✅ Hardcore Mode Loaded! (Sync via HardcoreStartTime)")
-    end
+            -- Shocker (local random, independent)
+            task.spawn(function()
+                while true do
+                    task.wait(math.random(INTERVALS.SHOCKER_MIN, INTERVALS.SHOCKER_MAX))
+                    LoadEntity("Shocker")
+                end
+            end)
 
-    -- Achievement at room 100
-    if opened and LatestRoom.Value == 100 and not GaveAchievement then
-        GaveAchievement = true
-        pcall(function()
-            local AchievementModule = Player.PlayerGui.MainUI.Initiator.Main_Game.RemoteListener.Modules.AchievementUnlock
-            if AchievementModule then
-                local unlockFunc = require(AchievementModule)
-                unlockFunc(nil, "HardcoreSurvivor")
-            end
-        end)
-    end
+            print("✅ Hardcore Mode Loaded! (Sync via HardcoreStartTime)")
+        end
+
+        -- Achievement at room 100
+        if opened and LatestRoom.Value == 100 and not GaveAchievement then
+            GaveAchievement = true
+            pcall(function()
+                local AchievementModule = Player.PlayerGui.MainUI.Initiator.Main_Game.RemoteListener.Modules.AchievementUnlock
+                if AchievementModule then
+                    local unlockFunc = require(AchievementModule)
+                    unlockFunc(nil, "HardcoreSurvivor")
+                end
+            end)
+        end
+    end)
 end)
