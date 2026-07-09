@@ -253,7 +253,7 @@ local function ceasetheroom()
             game.Debris:AddItem(entity, 5)
         end
         if killConnection then killConnection:Disconnect() end
-        if camShake then camShake:Stop() end
+        --if camShake then camShake:Stop() end
     end)
 end
 
