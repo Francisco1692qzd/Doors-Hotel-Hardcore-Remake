@@ -48,9 +48,6 @@ local function ceasetheroom()
     -- -------------------------------
     -- Configuration
     -- -------------------------------
-    local AMBRUH_SPEED = 45
-    local DEF_SPEED = 9999
-    local AMBRUH_HEIGHT = Vector3.new(0, 3.4, 0)
     local KILL_DISTANCE = 60
     local ENTITY_MODEL_URL = "https://raw.githubusercontent.com/Francisco1692qzd/Doors-Hotel-Hardcore-Remake/main/ceaser.rbxm"
 
@@ -59,15 +56,12 @@ local function ceasetheroom()
     -- -------------------------------
     local repStorage = game:GetService("ReplicatedStorage")
     local gameData = repStorage:FindFirstChild("GameData")
-    if not gameData then
-        warn("GameData not found – aborting")
-        return
-    end
+    if not gameData then warn("GameData not found") return end
 
     local latestRoom = gameData:FindFirstChild("LatestRoom")
     local currentRooms = workspace:FindFirstChild("CurrentRooms")
     if not latestRoom or not currentRooms then
-        warn("LatestRoom or CurrentRooms missing – aborting")
+        warn("LatestRoom or CurrentRooms missing")
         return
     end
 
@@ -75,7 +69,7 @@ local function ceasetheroom()
     if not camera then return end
 
     -- -------------------------------
-    -- Camera shake setup (safe)
+    -- Camera shake setup
     -- -------------------------------
     local CameraShaker = pcall(require, repStorage:FindFirstChild("CameraShaker")) and require(repStorage.CameraShaker) or nil
     local camShake
@@ -97,22 +91,21 @@ local function ceasetheroom()
     end
     entity.Parent = workspace
 
-    -- Find the main part
     local entityPart = entity:FindFirstChildWhichIsA("BasePart")
     if not entityPart then
-        warn("No BasePart in entity – aborting")
+        warn("No BasePart in entity")
         entity:Destroy()
         return
     end
 
-    -- Play sound if exists
+    -- Play sound
     local sound = entity:FindFirstChild("Silence")
     if sound and sound:IsA("Sound") then
         sound:Play()
     end
 
     -- -------------------------------
-    -- Lights effect
+    -- Lights effect (flicker blue)
     -- -------------------------------
     local tweenLights = TweenInfo.new(1)
     local color = { Color = Color3.fromRGB(0, 0, 255) }
@@ -138,12 +131,41 @@ local function ceasetheroom()
         end
     end)
 
+    wait(2) -- wait for initial flicker
+
     -- -------------------------------
-    -- Kill detection
+    -- TELEPORT TO FARTHEST ROOM ENTRANCE
+    -- -------------------------------
+    local farthestRoomNumber = latestRoom.Value
+    local farthestRoom = currentRooms:FindFirstChild(tostring(farthestRoomNumber))
+    if farthestRoom then
+        -- Try to find a part named "RoomEntrance" or "Entrance"
+        local entrancePart = farthestRoom:FindFirstChild("RoomEntrance") or farthestRoom:FindFirstChild("Entrance")
+        if not entrancePart then
+            -- Fallback: find any BasePart with "Entrance" in its name
+            for _, part in ipairs(farthestRoom:GetDescendants()) do
+                if part:IsA("BasePart") and (part.Name:lower():find("entrance") or part.Name:lower():find("door")) then
+                    entrancePart = part
+                    break
+                end
+            end
+        end
+        if entrancePart then
+            entityPart.CFrame = entrancePart.CFrame + Vector3.new(0, 3.4, 0) -- float slightly above
+        else
+            -- If no entrance, place at room's primary part or center
+            local primary = farthestRoom:FindFirstChild("PrimaryPart") or farthestRoom:FindFirstChildWhichIsA("BasePart")
+            if primary then
+                entityPart.CFrame = primary.CFrame + Vector3.new(0, 3.4, 0)
+            end
+        end
+    end
+
+    -- -------------------------------
+    -- Kill detection (optimised)
     -- -------------------------------
     local killed = false
     local player = game.Players.LocalPlayer
-    local character = player.Character
 
     local function canSeeTarget(target, size)
         if killed then return false end
@@ -153,7 +175,7 @@ local function ceasetheroom()
         local room = latestRoom.Value
         if room == 50 or room == 100 then return false end
 
-        -- Use modern raycast
+        -- Raycast
         local origin = entityPart.Position
         local direction = (target.HumanoidRootPart.Position - origin).unit * size
         local raycastParams = RaycastParams.new()
@@ -168,16 +190,6 @@ local function ceasetheroom()
         return false
     end
 
-    -- -------------------------------
-    -- Helper to get movement time
-    -- -------------------------------
-    local function GetTime(dist, speed)
-        return dist / speed
-    end
-
-    -- -------------------------------
-    -- Spawn kill monitor (optimized with Heartbeat)
-    -- -------------------------------
     local killConnection
     killConnection = game:GetService("RunService").Heartbeat:Connect(function()
         if killed or not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then
@@ -185,7 +197,6 @@ local function ceasetheroom()
         end
 
         if canSeeTarget(player.Character, KILL_DISTANCE) then
-            -- Kill
             local hum = player.Character:FindFirstChild("Humanoid")
             if hum then
                 hum:TakeDamage(100)
@@ -203,26 +214,20 @@ local function ceasetheroom()
                 end
             end
 
-            -- Send death hint (if remote exists)
+            -- Send death hint
             local remote = remotesFolder and remotesFolder:FindFirstChild("DeathHint")
-            if remote then
+            if remote and firesignal then
                 local hints = {
                     "You died to Cease...",
                     "Maybe trying to not move when he's nearby?"
                 }
-                -- Fire client event (exploit specific)
-                if firesignal then
-                    firesignal(remote.OnClientEvent, hints, "Blue")
-                else
-                    -- Fallback: print to console
-                    print("[Cease] Death hint:", table.concat(hints, " "))
-                end
+                firesignal(remote.OnClientEvent, hints, "Blue")
             end
 
             killed = true
         end
 
-        -- Camera shake when near
+        -- Camera shake near entity
         if not killed and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
             local dist = (entityPart.Position - player.Character.HumanoidRootPart.Position).Magnitude
             if dist <= KILL_DISTANCE and camShake then
@@ -232,112 +237,18 @@ local function ceasetheroom()
     end)
 
     -- -------------------------------
-    -- Movement system
+    -- Cleanup after a while (entity disappears)
     -- -------------------------------
-    local function moveThroughRooms(forward, speedMod)
-        local start, finish, step
-        if forward then
-            start = 1
-            finish = latestRoom.Value
-            step = 1
-        else
-            start = latestRoom.Value
-            finish = 1
-            step = -1
+    delay(10, function()
+        if entity and entity.Parent then
+            entityPart.Anchored = false
+            entityPart.CanCollide = false
+            game.Debris:AddItem(entity, 5)
         end
-
-        for i = start, finish, step do
-            local room = currentRooms:FindFirstChild(tostring(i))
-            if room then
-                local nodes = room:FindFirstChild("Nodes")
-                if nodes then
-                    local children = nodes:GetChildren()
-                    -- Sort nodes by name (assuming they are numbered)
-                    table.sort(children, function(a, b)
-                        return tonumber(a.Name) < tonumber(b.Name)
-                    end)
-                    if not forward then
-                        -- Reverse order for backward
-                        for idx = #children, 1, -1 do
-                            local node = children[idx]
-                            if node then
-                                local dist = (entityPart.Position - node.Position).Magnitude
-                                local speed = (ambruh_speed or AMBRUH_SPEED) + (speedMod or 0)
-                                local tween = game.TweenService:Create(
-                                    entityPart,
-                                    TweenInfo.new(GetTime(dist, speed), Enum.EasingStyle.Linear),
-                                    { CFrame = node.CFrame + AMBRUH_HEIGHT }
-                                )
-                                tween:Play()
-                                tween.Completed:Wait()
-                            end
-                        end
-                    else
-                        for _, node in ipairs(children) do
-                            if node then
-                                local dist = (entityPart.Position - node.Position).Magnitude
-                                local speed = (ambruh_speed or AMBRUH_SPEED) + (speedMod or 0)
-                                local tween = game.TweenService:Create(
-                                    entityPart,
-                                    TweenInfo.new(GetTime(dist, speed), Enum.EasingStyle.Linear),
-                                    { CFrame = node.CFrame + AMBRUH_HEIGHT }
-                                )
-                                tween:Play()
-                                tween.Completed:Wait()
-                            end
-                        end
-                    end
-                end
-            end
-        end
-    end
-
-    -- Execute movement with speed adjustments
-    local ambr uh_speed = AMBRUH_SPEED
-
-    -- Pass 1: Forward (normal speed)
-    moveThroughRooms(true, 0)
-
-    -- Pass 2: Backward (normal speed)
-    moveThroughRooms(false, 0)
-
-    -- Pass 3: Forward (increasing speed each node)
-    for i = 1, latestRoom.Value do
-        local room = currentRooms:FindFirstChild(tostring(i))
-        if room then
-            local nodes = room:FindFirstChild("Nodes")
-            if nodes then
-                local children = nodes:GetChildren()
-                table.sort(children, function(a, b)
-                    return tonumber(a.Name) < tonumber(b.Name)
-                end)
-                for _, node in ipairs(children) do
-                    if node then
-                        local dist = (entityPart.Position - node.Position).Magnitude
-                        local speed = AMBRUH_SPEED + 80   -- increasing speed
-                        local tween = game.TweenService:Create(
-                            entityPart,
-                            TweenInfo.new(GetTime(dist, speed), Enum.EasingStyle.Linear),
-                            { CFrame = node.CFrame + AMBRUH_HEIGHT }
-                        )
-                        tween:Play()
-                        tween.Completed:Wait()
-                    end
-                end
-            end
-        end
-    end
-
-    -- Cleanup
-    entityPart.Anchored = false
-    entityPart.CanCollide = false
-    game.Debris:AddItem(entity, 5)
-    if killConnection then killConnection:Disconnect() end
-    if camShake then camShake:Stop() end
+        if killConnection then killConnection:Disconnect() end
+        if camShake then camShake:Stop() end
+    end)
 end
 
--- Run with error protection
-local success, err = pcall(ceasetheroom)
-if not success then
-    warn("Cease script error: " .. tostring(err))
-end
+-- Run safely
+pcall(ceasetheroom)
