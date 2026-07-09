@@ -32,11 +32,9 @@ G.LoadGithubModel = function(url)
         return nil
     end
 
-    -- Try loading from cache first
     local cached = loadFromFile()
     if cached then return cached end
 
-    -- Download new model
     local response = request({ Url = url, Method = "GET" })
     if response.StatusCode ~= 200 then return nil end
 
@@ -45,15 +43,17 @@ G.LoadGithubModel = function(url)
 end
 
 local function ceasetheroom()
-    -- -------------------------------
-    -- Configuration
-    -- -------------------------------
-    local KILL_DISTANCE = 60
+    -- =============================================
+    -- CONFIGURATION
+    -- =============================================
+    local KILL_DISTANCE = 60               -- how far Cease can see
+    local TELEPORT_ROOM_OFFSET = 5         -- rooms ahead of current (e.g., latestRoom - 5)
     local ENTITY_MODEL_URL = "https://raw.githubusercontent.com/Francisco1692qzd/Doors-Hotel-Hardcore-Remake/main/ceaser.rbxm"
+    local HEIGHT_OFFSET = Vector3.new(0, 3.4, 0)  -- float height
 
-    -- -------------------------------
-    -- Safe reference gathering
-    -- -------------------------------
+    -- =============================================
+    -- SAFE REFERENCE GATHERING
+    -- =============================================
     local repStorage = game:GetService("ReplicatedStorage")
     local gameData = repStorage:FindFirstChild("GameData")
     if not gameData then warn("GameData not found") return end
@@ -68,9 +68,9 @@ local function ceasetheroom()
     local camera = workspace.CurrentCamera
     if not camera then return end
 
-    -- -------------------------------
-    -- Camera shake setup
-    -- -------------------------------
+    -- =============================================
+    -- CAMERA SHAKE
+    -- =============================================
     local CameraShaker = pcall(require, repStorage:FindFirstChild("CameraShaker")) and require(repStorage.CameraShaker) or nil
     local camShake
     if CameraShaker then
@@ -81,9 +81,9 @@ local function ceasetheroom()
         camShake:Shake(CameraShaker.Presets.Earthquake)
     end
 
-    -- -------------------------------
-    -- Load entity
-    -- -------------------------------
+    -- =============================================
+    -- LOAD ENTITY
+    -- =============================================
     local entity = G.LoadGithubModel and G.LoadGithubModel(ENTITY_MODEL_URL)
     if not entity then
         warn("Failed to load Ceaser model")
@@ -104,9 +104,9 @@ local function ceasetheroom()
         sound:Play()
     end
 
-    -- -------------------------------
-    -- Lights effect (flicker blue)
-    -- -------------------------------
+    -- =============================================
+    -- LIGHTS EFFECT (BLUE FLICKER)
+    -- =============================================
     local tweenLights = TweenInfo.new(1)
     local color = { Color = Color3.fromRGB(0, 0, 255) }
     local secondColor = { Color = Color3.fromRGB(0, 0, 155) }
@@ -131,19 +131,18 @@ local function ceasetheroom()
         end
     end)
 
-    wait(2) -- wait for initial flicker
+    wait(2)  -- let lights flicker
 
-    -- -------------------------------
-    -- TELEPORT TO FARTHEST ROOM ENTRANCE
-    -- -------------------------------
-    local farthestRoomNumber = latestRoom.Value
-    local farthestRoom = currentRooms:FindFirstChild(tostring(farthestRoomNumber))
-    if farthestRoom then
-        -- Try to find a part named "RoomEntrance" or "Entrance"
-        local entrancePart = farthestRoom:FindFirstChild("RoomEntrance") or farthestRoom:FindFirstChild("Entrance")
+    -- =============================================
+    -- TELEPORT TO TARGET ROOM
+    -- =============================================
+    local targetRoomNumber = math.max(1, latestRoom.Value - TELEPORT_ROOM_OFFSET)
+    local targetRoom = currentRooms:FindFirstChild(tostring(targetRoomNumber))
+    if targetRoom then
+        -- Find an entrance part (RoomEntrance, Entrance, or any part with "entrance" in name)
+        local entrancePart = targetRoom:FindFirstChild("RoomEntrance") or targetRoom:FindFirstChild("Entrance")
         if not entrancePart then
-            -- Fallback: find any BasePart with "Entrance" in its name
-            for _, part in ipairs(farthestRoom:GetDescendants()) do
+            for _, part in ipairs(targetRoom:GetDescendants()) do
                 if part:IsA("BasePart") and (part.Name:lower():find("entrance") or part.Name:lower():find("door")) then
                     entrancePart = part
                     break
@@ -151,19 +150,26 @@ local function ceasetheroom()
             end
         end
         if entrancePart then
-            entityPart.CFrame = entrancePart.CFrame + Vector3.new(0, 3.4, 0) -- float slightly above
+            entityPart.CFrame = entrancePart.CFrame + HEIGHT_OFFSET
         else
-            -- If no entrance, place at room's primary part or center
-            local primary = farthestRoom:FindFirstChild("PrimaryPart") or farthestRoom:FindFirstChildWhichIsA("BasePart")
+            -- fallback to primary part or any base part
+            local primary = targetRoom:FindFirstChild("PrimaryPart") or targetRoom:FindFirstChildWhichIsA("BasePart")
             if primary then
-                entityPart.CFrame = primary.CFrame + Vector3.new(0, 3.4, 0)
+                entityPart.CFrame = primary.CFrame + HEIGHT_OFFSET
             end
+        end
+    else
+        warn("Target room " .. targetRoomNumber .. " not found – teleporting to current room")
+        -- fallback to current room (player's location)
+        local player = game.Players.LocalPlayer
+        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            entityPart.CFrame = player.Character.HumanoidRootPart.CFrame + Vector3.new(0, 0, 20) + HEIGHT_OFFSET
         end
     end
 
-    -- -------------------------------
-    -- Kill detection (optimised)
-    -- -------------------------------
+    -- =============================================
+    -- KILL DETECTION (MOVEMENT INDEPENDENT)
+    -- =============================================
     local killed = false
     local player = game.Players.LocalPlayer
 
@@ -171,11 +177,11 @@ local function ceasetheroom()
         if killed then return false end
         if not target or not target:FindFirstChild("HumanoidRootPart") then return false end
 
-        -- Avoid bosses
+        -- Skip boss rooms (safe)
         local room = latestRoom.Value
         if room == 50 or room == 100 then return false end
 
-        -- Raycast
+        -- Raycast from entity to target
         local origin = entityPart.Position
         local direction = (target.HumanoidRootPart.Position - origin).unit * size
         local raycastParams = RaycastParams.new()
@@ -196,6 +202,7 @@ local function ceasetheroom()
             return
         end
 
+        -- Check if player is in line‑of‑sight (regardless of movement)
         if canSeeTarget(player.Character, KILL_DISTANCE) then
             local hum = player.Character:FindFirstChild("Humanoid")
             if hum then
@@ -214,7 +221,7 @@ local function ceasetheroom()
                 end
             end
 
-            -- Send death hint
+            -- Send death hint (if remote exists)
             local remote = remotesFolder and remotesFolder:FindFirstChild("DeathHint")
             if remote and firesignal then
                 local hints = {
@@ -227,7 +234,7 @@ local function ceasetheroom()
             killed = true
         end
 
-        -- Camera shake near entity
+        -- Camera shake when near
         if not killed and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
             local dist = (entityPart.Position - player.Character.HumanoidRootPart.Position).Magnitude
             if dist <= KILL_DISTANCE and camShake then
@@ -236,9 +243,9 @@ local function ceasetheroom()
         end
     end)
 
-    -- -------------------------------
-    -- Cleanup after a while (entity disappears)
-    -- -------------------------------
+    -- =============================================
+    -- CLEANUP AFTER A FEW SECONDS
+    -- =============================================
     delay(10, function()
         if entity and entity.Parent then
             entityPart.Anchored = false
