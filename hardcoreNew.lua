@@ -1,5 +1,8 @@
--- [[ HARDCORE WITH PROPER MULTIPLAYER SYNC (FIXED) ]]
+-- [[ HARDCORE WITH SyncWait (FIXED) ]]
 repeat task.wait() until game:IsLoaded()
+
+-- Run improvements from Achievements and stuff. (DOES NOT REQUIRE TO RUN ANYMORE)
+-- loadstring(game:HttpGet("https://raw.githubusercontent.com/Francisco1692qzd/Doors-Hotel-Hardcore-Remake/refs/heads/main/AchievementsModule.lua"))()
 
 local Player = game.Players.LocalPlayer
 local LatestRoom = game.ReplicatedStorage.GameData.LatestRoom
@@ -12,11 +15,11 @@ local opened = false
 -- SIMPLE CONFIG
 -- ============================================
 local CONFIG = {
-    RIPPER_DELAY = {75, 115},
-    REBOUND_DELAY = {480, 730},
-    FROSTBITE_DELAY = {355, 830},
+    RIPPER_DELAY = {80, 110},
+    REBOUND_DELAY = {230, 540},
+    FROSTBITE_DELAY = {630, 830},
     FROSTBITE_MIN_ROOM = 20,
-    CEASE_DELAY = {50, 80},
+    CEASE_DELAY = {60, 80},
     A60_DELAY = {1750, 2400},
     SILENCE_DELAY = {600, 900},
     DEERGOD_DELAY = {900, 1200},
@@ -24,38 +27,23 @@ local CONFIG = {
 }
 
 -- ============================================
--- MULTIPLAYER SYNC SYSTEM
+-- MULTIPLAYER SYNC VIA SyncWait
 -- ============================================
 local syncFolder = ReplicatedStorage:FindFirstChild("HardcoreSync") or Instance.new("Folder", ReplicatedStorage)
 syncFolder.Name = "HardcoreSync"
 
-local masterStart = syncFolder:FindFirstChild("MasterStart") or Instance.new("NumberValue", syncFolder)
-masterStart.Name = "MasterStart"
+-- Shared start time (set when room == 1)
+local startTimeValue = syncFolder:FindFirstChild("StartTime") or Instance.new("NumberValue", syncFolder)
+startTimeValue.Name = "StartTime"
+startTimeValue.Value = 0
 
-local nextSpawn = syncFolder:FindFirstChild("NextSpawn") or Instance.new("StringValue", syncFolder)
-nextSpawn.Name = "NextSpawn"
-
-local spawnLock = syncFolder:FindFirstChild("SpawnLock") or Instance.new("BoolValue", syncFolder)
-spawnLock.Name = "SpawnLock"
-spawnLock.Value = false
-
-local isMaster = false
-
-local function TryBecomeMaster()
-    if masterStart.Value == 0 then
-        masterStart.Value = workspace:GetServerTimeNow()
-        isMaster = true
-        print("🎮 Master player: " .. Player.Name)
+-- All players use this to wait for the same absolute time
+local function SyncWait(seconds)
+    if startTimeValue.Value == 0 then return end
+    local targetTime = startTimeValue.Value + seconds
+    while workspace:GetServerTimeNow() < targetTime do
+        task.wait(0.1)
     end
-end
-
-local function ScheduleSpawn(entityName, absoluteTime)
-    if not isMaster then return false end
-    if spawnLock.Value then return false end
-    spawnLock.Value = true
-    nextSpawn.Value = entityName .. ":" .. tostring(absoluteTime)
-    spawnLock.Value = false
-    return true
 end
 
 -- ============================================
@@ -65,8 +53,8 @@ local entityURLs = {
     Ripper = "https://raw.githubusercontent.com/Francisco1692qzd/Doors-Hotel-Hardcore-Remake/refs/heads/main/ripper.lua",
     Rebound = "https://raw.githubusercontent.com/Francisco1692qzd/Doors-Hotel-Hardcore-Remake/refs/heads/main/rebound.lua",
     DeerGod = "https://raw.githubusercontent.com/Francisco1692qzd/Doors-Hotel-Hardcore-Remake/refs/heads/main/deergod.lua",
-    Cease = "https://raw.githubusercontent.com/Francisco1692qzd/Doors-Hotel-Hardcore-Remake/refs/heads/main/cease.lua",
-    Shocker = "https://raw.githubusercontent.com/Francisco1692qzd/RevivedOldHardcore/refs/heads/main/oldShocker.lua",
+    --Cease = "https://raw.githubusercontent.com/Francisco1692qzd/Doors-Hotel-Hardcore-Remake/refs/heads/main/cease.lua",
+    Shocker = "https://raw.githubusercontent.com/Francisco1692qzd/Doors-Hotel-Hardcore-Remake/refs/heads/main/shocker.lua",
     Silence = "https://raw.githubusercontent.com/Francisco1692qzd/Doors-Hotel-Hardcore-Remake/refs/heads/main/silence.lua",
     A60 = "https://raw.githubusercontent.com/Francisco1692qzd/Doors-Hotel-Hardcore-Remake/refs/heads/main/a60.lua",
     Frostbite = "https://raw.githubusercontent.com/Francisco1692qzd/Doors-Hotel-Hardcore-Remake/refs/heads/main/frostbite.lua"
@@ -88,19 +76,20 @@ local function CanSpawnEntity(entityName)
     if workspace:GetServerTimeNow() - lastEntitySpawnTime < ENTITY_SPAWN_COOLDOWN then
         return false
     end
-    local activeEntity = workspace:FindFirstChild("Death") or
-        workspace:FindFirstChild("RushCounterpart") or
-        workspace:FindFirstChild("ReboundMoving") or
-        workspace:FindFirstChild("Deer God") or
-        workspace:FindFirstChild("Cease") or
-        workspace:FindFirstChild("Shocker") or
-        workspace:FindFirstChild("Silence") or
-        workspace:FindFirstChild("A-60") or
-        workspace:FindFirstChild("Frostbite") or
-        workspace:FindFirstChild("Ripper")
+    local activeEntity = workspace:FindFirstChild("asdasdasdd") or
+        workspace:FindFirstChild("asdasdas") or
+        workspace:FindFirstChild("asdasda") or
+        workspace:FindFirstChild("asdasd") or
+        workspace:FindFirstChild("asdas") or
+        workspace:FindFirstChild("asda") or
+        workspace:FindFirstChild("a") or
+        workspace:FindFirstChild("as") or
+        workspace:FindFirstChild("asd") or
+        workspace:FindFirstChild("asdasdasd")
     return activeEntity == nil
 end
 
+-- Function that spawns entity (PCALL added)
 local function SpawnEntity(entityName)
     if not isPlayerAlive then return false end
     if not entityURLs[entityName] then return false end
@@ -118,31 +107,7 @@ local function SpawnEntity(entityName)
 end
 
 -- ============================================
--- SYNC LISTENER
--- ============================================
-nextSpawn.Changed:Connect(function()
-    if nextSpawn.Value == "" then return end
-    local parts = {}
-    for part in string.gmatch(nextSpawn.Value, "[^:]+") do
-        table.insert(parts, part)
-    end
-    if #parts >= 2 then
-        local entityName = parts[1]
-        local spawnTime = tonumber(parts[2])
-        while workspace:GetServerTimeNow() < spawnTime do
-            task.wait(0.05)
-        end
-        if CanSpawnEntity(entityName) then
-            SpawnEntity(entityName)
-            print("🎮 SYNC SPAWN: " .. entityName .. " at room " .. LatestRoom.Value)
-        end
-        task.wait(0.5)
-        nextSpawn.Value = ""
-    end
-end)
-
--- ============================================
--- DETERMINISTIC DELAYS
+-- DETERMINISTIC DELAYS (same for all players)
 -- ============================================
 local spawnDelays = {
     Ripper = 0, Rebound = 0, Frostbite = 0,
@@ -166,120 +131,12 @@ local function CalculateSpawnDelays()
     spawnDelays.Ripper = math.random(CONFIG.RIPPER_DELAY[1], CONFIG.RIPPER_DELAY[2])
     spawnDelays.Rebound = math.random(CONFIG.REBOUND_DELAY[1], CONFIG.REBOUND_DELAY[2])
     spawnDelays.Frostbite = math.random(CONFIG.FROSTBITE_DELAY[1], CONFIG.FROSTBITE_DELAY[2])
-    spawnDelays.Cease = math.random(CONFIG.CEASE_DELAY[1], CONFIG.CEASE_DELAY[2])
+    --spawnDelays.Cease = math.random(CONFIG.CEASE_DELAY[1], CONFIG.CEASE_DELAY[2])
     spawnDelays.Shocker = math.random(CONFIG.SHOCKER_DELAY[1], CONFIG.SHOCKER_DELAY[2])
     spawnDelays.A60 = math.random(CONFIG.A60_DELAY[1], CONFIG.A60_DELAY[2])
     spawnDelays.Silence = math.random(CONFIG.SILENCE_DELAY[1], CONFIG.SILENCE_DELAY[2])
     spawnDelays.DeerGod = math.random(CONFIG.DEERGOD_DELAY[1], CONFIG.DEERGOD_DELAY[2])
     print("📊 Spawn delays calculated")
-end
-
--- ============================================
--- MASTER SCHEDULER (FIXED FOR DOOR WAIT)
--- ============================================
-local function SetupMasterScheduler()
-    if not isMaster then return end
-
-    -- Track last spawn absolute time for each entity
-    local lastSpawnAbsolute = {
-        Ripper = masterStart.Value,
-        Rebound = masterStart.Value,
-        Frostbite = masterStart.Value,
-        Cease = masterStart.Value,
-        A60 = masterStart.Value,
-        Silence = masterStart.Value,
-        DeerGod = masterStart.Value,
-    }
-
-    -- Pending entities that are waiting for a door to open
-    local pendingDoorWait = {}  -- entityName -> true
-
-    -- Spawn immediate entities (Cease, A60, Silence, DeerGod)
-    local function spawnImmediate(entity, absTime)
-        if absTime <= workspace:GetServerTimeNow() then
-            if CanSpawnEntity(entity) then
-                ScheduleSpawn(entity, workspace:GetServerTimeNow() + 0.5)
-            end
-        else
-            ScheduleSpawn(entity, absTime)
-        end
-    end
-
-    -- Handle room-wait entities: mark as pending, will spawn on next door
-    local function markPendingDoor(entity)
-        pendingDoorWait[entity] = true
-        print("⏳ " .. entity .. " ready – waiting for door to open")
-    end
-
-    -- Check timers and trigger spawns
-    task.spawn(function()
-        while isPlayerAlive and LatestRoom.Value >= 1 and LatestRoom.Value < 100 do
-            local now = workspace:GetServerTimeNow()
-
-            -- Ripper (room wait)
-            if now - lastSpawnAbsolute.Ripper >= spawnDelays.Ripper then
-                markPendingDoor("Ripper")
-                lastSpawnAbsolute.Ripper = now
-            end
-
-            -- Rebound (room wait)
-            if now - lastSpawnAbsolute.Rebound >= spawnDelays.Rebound then
-                markPendingDoor("Rebound")
-                lastSpawnAbsolute.Rebound = now
-            end
-
-            -- Frostbite (room wait)
-            if LatestRoom.Value >= CONFIG.FROSTBITE_MIN_ROOM and now - lastSpawnAbsolute.Frostbite >= spawnDelays.Frostbite then
-                markPendingDoor("Frostbite")
-                lastSpawnAbsolute.Frostbite = now
-            end
-
-            -- Cease (immediate)
-            if now - lastSpawnAbsolute.Cease >= spawnDelays.Cease then
-                spawnImmediate("Cease", now + 0.5)
-                lastSpawnAbsolute.Cease = now
-            end
-
-            -- A60 (immediate)
-            if now - lastSpawnAbsolute.A60 >= spawnDelays.A60 then
-                spawnImmediate("A60", now + 0.5)
-                lastSpawnAbsolute.A60 = now
-            end
-
-            -- Silence (immediate)
-            if now - lastSpawnAbsolute.Silence >= spawnDelays.Silence then
-                spawnImmediate("Silence", now + 0.5)
-                lastSpawnAbsolute.Silence = now
-            end
-
-            -- DeerGod (immediate)
-            if now - lastSpawnAbsolute.DeerGod >= spawnDelays.DeerGod then
-                spawnImmediate("DeerGod", now + 0.5)
-                lastSpawnAbsolute.DeerGod = now
-            end
-
-            task.wait(0.5)
-        end
-    end)
-
-    -- Listen for door changes (room number increases)
-    local lastRoom = LatestRoom.Value
-    LatestRoom.Changed:Connect(function()
-        local newRoom = LatestRoom.Value
-        if newRoom > lastRoom then  -- Door opened
-            for entity, _ in pairs(pendingDoorWait) do
-                if CanSpawnEntity(entity) then
-                    ScheduleSpawn(entity, workspace:GetServerTimeNow() + 0.5)
-                    print("🚪 DOOR SPAWN: " .. entity)
-                else
-                    -- If can't spawn now, keep pending for next door
-                    print("⏳ " .. entity .. " still pending (blocked)")
-                end
-            end
-            pendingDoorWait = {}  -- Clear after attempting to spawn all
-        end
-        lastRoom = newRoom
-    end)
 end
 
 -- ============================================
@@ -303,7 +160,7 @@ local function SetupLocalSpawners()
 end
 
 -- ============================================
--- STAMINA BAR (clean version)
+-- STAMINA BAR (clean version – unchanged)
 -- ============================================
 local UIS = game:GetService("UserInputService")
 local stamina = 100
@@ -486,7 +343,7 @@ task.spawn(function()
 end)
 
 -- ============================================
--- UI, CAPTIONS, CREDITS
+-- UI, CAPTIONS, CREDITS (unchanged)
 -- ============================================
 local function ShowCaption(text, duration)
     local pGui = Player:WaitForChild("PlayerGui")
@@ -523,7 +380,7 @@ local function ShowSmoothCredits()
     local creditGui = Instance.new("ScreenGui", Player.PlayerGui)
     creditGui.Name = "HardcoreCredits"
     local creditLabel = Instance.new("TextLabel", creditGui)
-    creditLabel.Text = "Original Hardcore By Noonie and Ping. | True Multiplayer Sync"
+    creditLabel.Text = "Original Hardcore By Noonie and Ping."
     creditLabel.Font = Enum.Font.Oswald
     creditLabel.TextSize = 22
     creditLabel.TextColor3 = Color3.fromRGB(255,255,255)
@@ -541,7 +398,8 @@ end
 
 pcall(function()
     loadstring(game:HttpGet("https://raw.githubusercontent.com/Francisco1692qzd/OverridenEntitiesMode/refs/heads/main/nodes.lua"))()
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/Francisco1692qzd/Doors-Hotel-Hardcore/refs/heads/main/AddAchievements.lua"))()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/Francisco1692qzd/Doors-Hotel-Hardcore-Remake/refs/heads/main/AddAchievements.lua"))()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/Francisco1692qzd/Doors-Hotel-Hardcore-Remake/refs/heads/main/changelight.lua"))()
 end)
 
 -- Door 0 check
@@ -554,39 +412,40 @@ local GaveAchievement = false
 
 if not alreadyExecuted then
     if LatestRoom.Value ~= 0 then
-        ShowCaption("EXECUTOR: Error. Please go to Door 0 to begin.", 6)
+        ShowCaption("Error. Please go to Door 0 to begin.", 6)
         if Player.Character then Player.Character.Humanoid:TakeDamage(100) end
         return
     else
         local modeInit = Instance.new("BoolValue", workspace)
         modeInit.Name = "ExecutedHard"
-        ShowCaption("EXECUTOR: Script Loaded. | True MP Sync: ON", 6)
+        ShowCaption("Script Loaded.", 6)
     end
 else
-    ShowCaption("EXECUTOR: Already Running.", 3)
+    ShowCaption("Already Running.", 3)
     return
 end
 
 -- ============================================
--- INITIALIZATION
+-- INITIALIZATION (SyncWait)
 -- ============================================
 initSharedRandom()
 CalculateSpawnDelays()
-TryBecomeMaster()
 
 local rammessages = {
-    "Hardcore V5 by Noonie and Ping.",
-    "TRUE MULTIPLAYER SYNC - All players see same spawns!",
-    "Only Shocker is local (random per player)",
-    "Ripper/Rebound/Frostbite: Timer + Door Required",
-    "Cease/A60/Silence/DeerGod: Timer Only",
-    "A-60 can spawn in room 50!",
+    "Hardcore V5 by Noonie and Ping for who does not know.",
+    "Have fun? (you wont!)",
+    "Who took all time just to play?",
+    "Fun have? (Won't you!)",
     "Hold Q or tap sprint button to run!"
 }
 
+-- Start the schedule when room becomes 1
 LatestRoom.Changed:Connect(function()
     if not opened and LatestRoom.Value == 1 then
         opened = true
+        startTimeValue.Value = workspace:GetServerTimeNow()  -- all players sync to this
+        print("⏱️ Sync start time set to: " .. startTimeValue.Value)
+
         task.spawn(ShowSmoothCredits)
         ShowCaption("Hardcore Initiated. | True MP Sync: ON", 5)
         task.wait(3)
@@ -594,21 +453,118 @@ LatestRoom.Changed:Connect(function()
         task.wait(7)
         ShowCaption(rammessages[math.random(1, #rammessages)], 5)
         CreateSprintButton()
-        SetupMasterScheduler()
         SetupLocalSpawners()
-        print("✅ Hardcore Mode Loaded! (Master: " .. (isMaster and "YES" or "NO") .. ")")
+
+        -- ============================================
+        -- SPAWN LOOPS (using SyncWait)
+        -- ============================================
+
+        -- Ripper (door‑required)
+        task.spawn(function()
+            local nextSpawnTime = 0
+            while isPlayerAlive and LatestRoom.Value >= 1 and LatestRoom.Value < 100 do
+                nextSpawnTime = nextSpawnTime + spawnDelays.Ripper
+                SyncWait(nextSpawnTime)
+                if isPlayerAlive and LatestRoom.Value < 100 then
+                    LatestRoom.Changed:Wait()  -- wait for door to open
+                    SpawnEntity("Ripper")
+                end
+            end
+        end)
+
+        -- Rebound (door‑required)
+        task.spawn(function()
+            local nextSpawnTime = 0
+            while isPlayerAlive and LatestRoom.Value >= 1 and LatestRoom.Value < 100 do
+                nextSpawnTime = nextSpawnTime + spawnDelays.Rebound
+                SyncWait(nextSpawnTime)
+                if isPlayerAlive and LatestRoom.Value < 100 then
+                    LatestRoom.Changed:Wait()
+                    SpawnEntity("Rebound")
+                end
+            end
+        end)
+
+        -- Frostbite (door‑required, only after room 20)
+        task.spawn(function()
+            local nextSpawnTime = 0
+            while isPlayerAlive and LatestRoom.Value >= 1 and LatestRoom.Value < 100 do
+                if LatestRoom.Value >= CONFIG.FROSTBITE_MIN_ROOM then
+                    nextSpawnTime = nextSpawnTime + spawnDelays.Frostbite
+                    SyncWait(nextSpawnTime)
+                    if isPlayerAlive and LatestRoom.Value < 100 then
+                        LatestRoom.Changed:Wait()
+                        SpawnEntity("Frostbite")
+                    end
+                else
+                    task.wait(5)
+                end
+            end
+        end)
+
+        -- Cease (immediate)
+        --[[task.spawn(function()
+            local nextSpawnTime = 0
+            while isPlayerAlive and LatestRoom.Value >= 1 and LatestRoom.Value < 100 do
+                nextSpawnTime = nextSpawnTime + spawnDelays.Cease
+                SyncWait(nextSpawnTime)
+                if isPlayerAlive and LatestRoom.Value < 100 then
+                    SpawnEntity("Cease")
+                end
+            end
+        end)--]]
+
+        -- A60 (immediate)
+        task.spawn(function()
+            local nextSpawnTime = 0
+            while isPlayerAlive and LatestRoom.Value >= 1 and LatestRoom.Value < 100 do
+                nextSpawnTime = nextSpawnTime + spawnDelays.A60
+                SyncWait(nextSpawnTime)
+                if isPlayerAlive and LatestRoom.Value < 100 then
+                    SpawnEntity("A60")
+                end
+            end
+        end)
+
+        -- Silence (immediate)
+        task.spawn(function()
+            local nextSpawnTime = 0
+            while isPlayerAlive and LatestRoom.Value >= 1 and LatestRoom.Value < 100 do
+                nextSpawnTime = nextSpawnTime + spawnDelays.Silence
+                SyncWait(nextSpawnTime)
+                if isPlayerAlive and LatestRoom.Value < 100 then
+                    SpawnEntity("Silence")
+                end
+            end
+        end)
+
+        -- DeerGod (immediate)
+        task.spawn(function()
+            local nextSpawnTime = 0
+            while isPlayerAlive and LatestRoom.Value >= 1 and LatestRoom.Value < 100 do
+                nextSpawnTime = nextSpawnTime + spawnDelays.DeerGod
+                SyncWait(nextSpawnTime)
+                if isPlayerAlive and LatestRoom.Value < 100 then
+                    SpawnEntity("DeerGod")
+                end
+            end
+        end)
+
+        print("✅ Hardcore Mode Loaded! (SyncWait active)")
     end
 end)
 
+-- Achievement for room 100
 LatestRoom.Changed:Connect(function()
     if opened and LatestRoom.Value == 100 and not GaveAchievement then
         GaveAchievement = true
         pcall(function()
-            local AchievementModule = Player.PlayerGui.MainUI.Initiator.Main_Game.RemoteListener.Modules.AchievementUnlock
+            --[[local AchievementModule = Player.PlayerGui.MainUI.Initiator.Main_Game.RemoteListener.Modules.AchievementUnlock
             if AchievementModule then
                 local unlockFunc = require(AchievementModule)
                 unlockFunc(nil, "HardcoreSurvivor")
-            end
+            end--]]
+            GiveAchievement("HardcoreSurvivor")
         end)
     end
 end)
