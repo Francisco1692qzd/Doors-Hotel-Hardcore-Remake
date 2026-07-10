@@ -342,7 +342,7 @@ pcall(function()
             startTimeValue.Value = workspace:GetServerTimeNow()
 
             task.spawn(ShowSmoothCredits)
-            ShowCaption("Hardcore Initiated. | True MP Sync: ON", 5)
+            ShowCaption("Hardcore Initiated.", 5)
             task.wait(3)
             ShowCaption("Have fun " .. Player.Name .. ".", 4)
             task.wait(4)
