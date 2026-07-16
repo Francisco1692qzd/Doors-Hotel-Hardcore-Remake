@@ -1,7 +1,7 @@
 local G = getgenv()
 local ReplicatedStorage = game.ReplicatedStorage
 local remotesFolder = nil
-local maxRebounds = 4
+local maxRebounds = 6
 
 G.LoadGithubAudio = function(url)
     if not (writefile and getcustomasset and request) then return nil end
@@ -386,7 +386,7 @@ if isBossActive() then return end
 		end
 	end)
 
-    if maxRebounds == 4 or maxRebounds == 2 then
+    if maxRebounds == 6 or maxRebounds == 4 or maxRebounds == 2 then
 	    for i = latestRoom.Value, 1, -1 do
 	        if currentRooms:FindFirstChild(i) then
 	            local room = currentRooms[i]
@@ -398,7 +398,7 @@ if isBossActive() then return end
 	            end
 	        end
 	    end
-	elseif maxRebounds == 3 or maxRebounds == 1 then
+	elseif maxRebounds == 5 or maxRebounds == 3 or maxRebounds == 1 then
 	    for i = 1, latestRoom.Value do
 	        if currentRooms:FindFirstChild(i) then
 	            local room = currentRooms[i]
