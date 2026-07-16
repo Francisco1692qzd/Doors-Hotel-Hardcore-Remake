@@ -231,19 +231,19 @@ local function SpawnShocker()
                     -- Entity ignores player and disappears
                     mainPart.Anchored = false
                     mainPart.CanCollide = false
-                    local AchievementModule = game.Players.LocalPlayer.PlayerGui.MainUI.Initiator.Main_Game.RemoteListener.Modules.AchievementUnlock
+                    --[[local AchievementModule = game.Players.LocalPlayer.PlayerGui.MainUI.Initiator.Main_Game.RemoteListener.Modules.AchievementUnlock
 	                if AchievementModule == nil then return end
 	                if workspace:FindFirstChild("ShockerAchievement") then return end
 	                if not game.ReplicatedStorage:FindFirstChild("ModulesShared") then return end
 	                local dataModule = require(game:GetService("ReplicatedStorage"):WaitForChild("ModulesShared"):WaitForChild("Achievements"))
-	                local unlockFunc = require(AchievementModule)
+	                local unlockFunc = require(AchievementModule)]]
 	                if not workspace:FindFirstChild("ShockerAchievement") then
-		                unlockFunc(nil, "Shocker") 
-	                end
-	                local ObtainedBadge = Instance.new("BoolValue")
-	                ObtainedBadge.Name = "ShockerAchievement"
-	                ObtainedBadge.Value = true
-	                ObtainedBadge.Parent = workspace
+			  		      GiveAchievement("Shocker")
+			  	    end
+			  	    local ObtainedBadge = Instance.new("BoolValue")
+			  	    ObtainedBadge.Name = "ShockerAchievement"
+			  	    ObtainedBadge.Value = true
+			  	    ObtainedBadge.Parent = workspace
                     task.wait(6)
                     if entity then entity:Destroy() end
                     break
