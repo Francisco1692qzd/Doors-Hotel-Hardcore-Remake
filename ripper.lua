@@ -195,6 +195,8 @@ local function SPAWNHORROR()
 	pcall(function()
     camShake:Start()
     camShake:Shake(result.Presets.Earthquake)
+	camShake:Shake(result.Presets.Earthquake)
+	camShake:Shake(result.Presets.Bump)
 	end)
 	
 	local rawURL = "https://raw.githubusercontent.com/Francisco1692qzd/Doors-Hotel-Hardcore-Remake/main/ripperr.rbxm"
@@ -227,11 +229,20 @@ local function SPAWNHORROR()
             end
         end
     end
+	for i, v in pairs(currentRooms[latestRoom.Value - 1]:GetDescendants()) do
+        if v:IsA("Light") then
+            game.TweenService:Create(v, tweenLights, color):Play()
+            if v.Parent.Name == "LightFixture" then
+                game.TweenService:Create(v.Parent, tweenLights, color):Play()
+            end
+        end
+    end	
     local spawnSound = entity.Ripe.Spawn:Clone()
     entity.Ripe.Spawn:Destroy()
     spawnSound.Parent = workspace
     spawnSound.TimePosition = 0
     spawnSound.Looped = false
+	spawnSound.Volume = 10
     spawnSound:Play()
     
     local entityPart = entity:FindFirstChildWhichIsA("BasePart")
@@ -241,9 +252,13 @@ local function SPAWNHORROR()
 
     for _, sound in pairs(entityPart:GetChildren()) do
         if (sound:IsA("Sound") and sound.Name == "Screams of dah damneddd") then
-            local dist = Instance.new("DistortionSoundEffect", sound)
+			local soundClone = sound:Clone()
+            local dist = Instance.new("DistortionSoundEffect", soundClone)
             dist.Level = 0.32
-            dist.Parent = sound
+            dist.Parent = soundClone
+			local dist2 = Instance.new("DistortionSoundEffect", sound)
+			dist.Level = 0.32
+			dist.Parent = sound
             print("added")
         end
     end
