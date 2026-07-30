@@ -203,7 +203,7 @@ local function DeerGod()
     local currentRooms = workspace.CurrentRooms
     local entity = nil
     local killed = false
-    local deergodId = "rbxassetid://12262883448"
+    local deergodId = "rbxassetid://113182046844967"
     local entity = game:GetObjects(deergodId)[1]
     entity.Parent = workspace
     local chaseTheme = G.LoadGithubAudio("https://raw.githubusercontent.com/Francisco1692qzd/Doors-Hotel-Hardcore-Remake/main/DeerGodChaseTheme.mp3")
@@ -222,7 +222,7 @@ local function DeerGod()
 
     if not entity then return end
 
-    local entityPart = entity:FindFirstChildWhichIsA("BasePart")
+    local entityPart = entity
     local function canSeeTarget(target, size)
         if killed == true then
             return
@@ -285,7 +285,7 @@ if isBossActive() then return end
         end
     end)
 	spawn(function()
-        while entity ~= nil and entityPart ~= nil do wait(1.6)
+        while entity ~= nil and entityPart ~= nil do wait(1.8)
 			if entity.Parent ~= nil and entityPart.Parent ~= nil then
 				camShake:Shake(cameraShaker.Presets.Earthquake)
 			end
@@ -311,9 +311,9 @@ if isBossActive() then return end
             end
         end
     end
-    game.TweenService:Create(entityPart, TweenInfo.new(0.5), {CFrame = entityPart.CFrame * CFrame.new(0,-80,0)}):Play()
-    game.Debris:AddItem(entity, 0.5)
-    wait(0.5)
+    game.TweenService:Create(entityPart, TweenInfo.new(0.2), {CFrame = entityPart.CFrame * CFrame.new(0,-80,0)}):Play()
+    game.Debris:AddItem(entity, 0.2)
+    wait(0.2)
     chaseMusic:Destroy()
 	wait(1)
 	--[[local AchievementModule = game.Players.LocalPlayer.PlayerGui.MainUI.Initiator.Main_Game.RemoteListener.Modules.AchievementUnlock
