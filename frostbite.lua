@@ -170,7 +170,7 @@ task.spawn(function()
     -- Active Shake Loop
     task.spawn(function()
         while entity and entity.Parent and active do
-            camShake:ShakeOnce(20, 30, 0, 3)
+            camShake:ShakeOnce(10, 30, 0, 3)
             task.wait(0.5)
         end
     end)
@@ -187,7 +187,7 @@ task.spawn(function()
     lightFilter.Name = "FrostbiteFilter"
     lightFilter.Parent = Lighting
     
-    local currentLightTween = TweenService:Create(lightFilter, TweenInfo.new(13), {
+    local currentLightTween = TweenService:Create(lightFilter, TweenInfo.new(19), {
         Brightness = -0.2,
         Contrast = 0.9,
         Saturation = -0.7,
@@ -216,7 +216,7 @@ task.spawn(function()
 
                     -- Apply freezing damage if no heat source is equipped
                     if not hasHeat and char.Humanoid.Health > 0 then
-                        char.Humanoid:TakeDamage(10)
+                        char.Humanoid:TakeDamage(5)
                         
                         -- Handle Custom Death Screen Details
                         if char.Humanoid.Health <= 0 then
@@ -243,7 +243,7 @@ task.spawn(function()
         currentLightTween:Cancel()
     end
     
-    local restoreLightTween = TweenService:Create(lightFilter, TweenInfo.new(18), {
+    local restoreLightTween = TweenService:Create(lightFilter, TweenInfo.new(14), {
         Brightness = 0,
         Saturation = 0,
         Contrast = 0,
