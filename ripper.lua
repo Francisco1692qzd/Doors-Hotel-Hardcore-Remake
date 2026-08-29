@@ -181,7 +181,7 @@ local function SPAWNHORROR()
     local ambruhspeed = 150
     local DEF_SPEED = 99999
     local storer = ambruhspeed
-    local ambruhheight = Vector3.new(0,8,0)
+    local ambruhheight = Vector3.new(0,5,0)
     
     local success, result = pcall(function() return require(repStorage.CameraShaker) end)
     if not success then warn("Module failed to load, but script is still running!") end
