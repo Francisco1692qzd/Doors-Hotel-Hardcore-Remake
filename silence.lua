@@ -86,6 +86,28 @@ local function Silence()
 
     local entityPart = entity:FindFirstChildWhichIsA("BasePart")
 
+    -- ------------------------------------------------------------
+    -- NEW: Dynamic speed function (distance + room length)
+    -- ------------------------------------------------------------
+    local function getDynamicSpeed(entityPos, playerPos, nodeCount)
+        local baseSpeed = 25   -- original ambruhspeed
+        local speed = baseSpeed
+
+        -- If far from player (>225 studs), double speed
+        if playerPos and (entityPos - playerPos).magnitude > 225 then
+            speed = speed * 3
+        end
+
+        -- If room has many nodes, speed up progressively (cap at +50%)
+        if nodeCount >= 6 then
+            local extra = (nodeCount - 5) * 0.1  -- +10% per extra node beyond 5
+            speed = speed * (1 + math.min(extra, 0.5))
+        end
+
+        return speed
+    end
+    -- ------------------------------------------------------------
+
     wait(1)
     local function canSeeTarget(target, size)
         if killed == true then
@@ -143,12 +165,17 @@ local function Silence()
             local room = currentRooms[i]
             if room and room:FindFirstChild("Nodes") then
                 local nodes = room:FindFirstChild("Nodes")
+                local nodeCount = #nodes:GetChildren()
                 moduleScripts.Module_Events.shatter(room)
-                for v = 1, #nodes:GetChildren() do
+                for v = 1, nodeCount do
                     if nodes:FindFirstChild(v) then
                         local node = nodes[v]
                         local dist = (entityPart.Position - node.Position).magnitude
-                        local STOPSTEALINGBRODONTYOUHAVEAMOMMYTOLOVEYOUORYOUGOTADOPTED = game.TweenService:Create(entityPart, TweenInfo.new(GetTime(dist, ambruhspeed), Enum.EasingStyle.Linear, Enum.EasingDirection.Out, 0,false,0), {CFrame = node.CFrame + ambruhheight})
+                        -- Compute dynamic speed based on distance and node count
+                        local player = game.Players.LocalPlayer
+                        local playerPos = player.Character and player.Character.HumanoidRootPart
+                        local currentSpeed = getDynamicSpeed(entityPart.Position, playerPos and playerPos.Position, nodeCount)
+                        local STOPSTEALINGBRODONTYOUHAVEAMOMMYTOLOVEYOUORYOUGOTADOPTED = game.TweenService:Create(entityPart, TweenInfo.new(GetTime(dist, currentSpeed), Enum.EasingStyle.Linear, Enum.EasingDirection.Out, 0,false,0), {CFrame = node.CFrame + ambruhheight})
                         STOPSTEALINGBRODONTYOUHAVEAMOMMYTOLOVEYOUORYOUGOTADOPTED:Play()
                         STOPSTEALINGBRODONTYOUHAVEAMOMMYTOLOVEYOUORYOUGOTADOPTED.Completed:Wait()
                         ambruhspeed = storer
