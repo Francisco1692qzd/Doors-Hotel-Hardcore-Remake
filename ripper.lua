@@ -179,7 +179,6 @@ local function SPAWNHORROR()
     local currentRooms = workspace.CurrentRooms
     local entity = nil
     local ambruhspeed = 150
-    local val = 60
     local DEF_SPEED = 99999
     local storer = ambruhspeed
     local ambruhheight = Vector3.new(0,8,0)
@@ -280,6 +279,7 @@ local function SPAWNHORROR()
         local origin = entityPart.Position
         local direction = (target.HumanoidRootPart.Position - origin).unit * size
         local ray = Ray.new(origin, direction)
+        -- CORREÇÃO: usar entityPart em vez de entity
         local hit = workspace:FindPartOnRay(ray, entityPart)
         if hit then
             if hit:IsDescendantOf(target) then
@@ -296,20 +296,18 @@ local function SPAWNHORROR()
     end
 
     -- ------------------------------------------------------------
-    -- NEW: Dynamic speed function (distance + room length)
+    -- Dynamic speed function (distance + room length)
     -- ------------------------------------------------------------
     local function getDynamicSpeed(entityPos, playerPos, nodeCount)
         local baseSpeed = 150
         local speed = baseSpeed
 
-        -- If far from player (>225 studs), double speed
         if playerPos and (entityPos - playerPos).magnitude > 225 then
             speed = speed * 2
         end
 
-        -- If room has many nodes, speed up progressively (cap at +50%)
         if nodeCount >= 6 then
-            local extra = (nodeCount - 5) * 0.1  -- +10% per extra node beyond 5
+            local extra = (nodeCount - 5) * 0.1
             speed = speed * (1 + math.min(extra, 0.5))
         end
 
@@ -386,12 +384,20 @@ local function SPAWNHORROR()
                                 "It will come back. Stay hidden until you're sure it's safe.",
                                 "Silence doesn't mean it's gone. Wait for the door to return to normal."
                             }
+                            -- Proteção para firesignal
+                            local function safeFireSignal(remote, ...)
+                                if type(firesignal) == "function" then
+                                    pcall(firesignal, remote, ...)
+                                else
+                                    warn("firesignal not available")
+                                end
+                            end
                             if ReplicatedStorage:FindFirstChild("RemotesFolder") then
                                 local remotesFolder = ReplicatedStorage:FindFirstChild("RemotesFolder")
-                                firesignal(remotesFolder.DeathHint.OnClientEvent, hints, "Blue")
+                                safeFireSignal(remotesFolder.DeathHint.OnClientEvent, hints, "Blue")
                             elseif ReplicatedStorage:FindFirstChild("Bricks") then
                                 local remotesFolder = ReplicatedStorage:FindFirstChild("Bricks")
-                                firesignal(remotesFolder.DeathHint.OnClientEvent, hints)
+                                safeFireSignal(remotesFolder.DeathHint.OnClientEvent, hints)
                             end
                         end)()
                     end
@@ -425,21 +431,22 @@ local function SPAWNHORROR()
                     if node then
                         if breakMove then break end
                         local dist = (entityPart.Position - node.Position).magnitude
-                        -- Calculate dynamic speed
                         local playerPos = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character.HumanoidRootPart
                         local currentSpeed = getDynamicSpeed(entityPart.Position, playerPos and playerPos.Position, nodeCount)
                         local bruh = game.TweenService:Create(entityPart, TweenInfo.new(GetTime(dist, currentSpeed), Enum.EasingStyle.Linear, Enum.EasingDirection.Out, 0,false,0), {CFrame = node.CFrame + ambruhheight})
                         bruh:Play()
                         bruh.Completed:Wait()
-                        -- Reset base speed (will be recalculated next iteration)
                         ambruhspeed = storer
                     end
                 end
             end
-            local soundHit = Instance.new("Sound") game.Debris:AddItem(soundHit, soundHit.TimeLength + 0.2)
+            -- Som de impacto com duração fixa (3 segundos)
+            local soundHit = Instance.new("Sound")
             soundHit.SoundId = "rbxassetid://123689565985768"
             soundHit.Volume = 10
             soundHit:Play()
+            task.wait(3)
+            soundHit:Destroy()
             camShake:ShakeOnce(10, 8, 0, 4, 1, 6)
             if breakMove then break end
         end
@@ -488,32 +495,33 @@ local function SPAWNHORROR()
         end
     end)
 
-    local soundHit = Instance.new("Sound") game.Debris:AddItem(soundHit, soundHit.TimeLength + 0.5)
+    -- Som final com duração fixa (5 segundos)
+    local soundHit = Instance.new("Sound")
     soundHit.SoundId = "rbxassetid://123689565985768"
     soundHit.Volume = 10
     soundHit:Play()
+    task.wait(5)
+    soundHit:Destroy()
     camShake:ShakeOnce(10, 8, 0, 4, 2, 6)
-    task.wait(soundHit.TimeLength + 0.35)
+    task.wait(0.35)
     camShake:Shake(result.Presets.Explosion)
     camShake:Shake(result.Presets.Explosion)
     pcall(function() workspace.CurrentRooms[latestRoom.Value].Door.ClientOpen:FireServer() end)
     slam:Play()
-	slam.RollOffMaxDistance = 200
-    slam.Volume = 10500
-	local slamClone = slam:Clone()
-	slamClone.Parent = slam.Parent
-	slamClone.Name = slam.Name "_Clone"
-	slamClone.RollOffMaxDistance = 700
-    local dist = Instance.new("DistortionSoundEffect", slam)
-    dist.Level = 0.6
-	local dist1 = Instance.new("DistortionSoundEffect", slamClone)
-	dist1.Parent = slamClone
-	dist1.Level = 0.6
-	local eq = Instance.new("EqualizerSoundEffect", slamClone)
-	eq.HighGain = -80
-	eq.MidGain = -20
-	eq.LowGain = -5
-	eq.Parent = slamClone
+    slam.RollOffMaxDistance = 200
+    slam.Volume = 10  -- Roblox limita a 10, então 10500 é inútil
+    local slamClone = slam:Clone()
+    slamClone.Parent = slam.Parent
+    slamClone.Name = slam.Name .. "_Clone"
+    slamClone.RollOffMaxDistance = 700
+    local distEffect = Instance.new("DistortionSoundEffect", slam)
+    distEffect.Level = 0.6
+    local distEffectClone = Instance.new("DistortionSoundEffect", slamClone)
+    distEffectClone.Level = 0.6
+    local eq = Instance.new("EqualizerSoundEffect", slamClone)
+    eq.HighGain = -80
+    eq.MidGain = -20
+    eq.LowGain = -5
     wait(1)
     entityPart.Anchored = false
     entityPart.CanCollide = false
