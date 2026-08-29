@@ -178,7 +178,7 @@ local function SPAWNHORROR()
     local latestRoom = gameData.LatestRoom
     local currentRooms = workspace.CurrentRooms
     local entity = nil
-    local ambruhspeed = 150
+    local ambruhspeed = 100
     local DEF_SPEED = 99999
     local storer = ambruhspeed
     local ambruhheight = Vector3.new(0,2.5,0)
