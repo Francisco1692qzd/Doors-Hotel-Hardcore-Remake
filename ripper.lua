@@ -279,7 +279,6 @@ local function SPAWNHORROR()
         local origin = entityPart.Position
         local direction = (target.HumanoidRootPart.Position - origin).unit * size
         local ray = Ray.new(origin, direction)
-        -- CORREÇÃO: usar entityPart em vez de entity
         local hit = workspace:FindPartOnRay(ray, entityPart)
         if hit then
             if hit:IsDescendantOf(target) then
@@ -295,9 +294,7 @@ local function SPAWNHORROR()
         return dist / speed
     end
 
-    -- ------------------------------------------------------------
     -- Dynamic speed function (distance + room length)
-    -- ------------------------------------------------------------
     local function getDynamicSpeed(entityPos, playerPos, nodeCount)
         local baseSpeed = 150
         local speed = baseSpeed
@@ -313,7 +310,6 @@ local function SPAWNHORROR()
 
         return speed
     end
-    -- ------------------------------------------------------------
 
     pcall(function()
         task.spawn(function()
@@ -384,7 +380,6 @@ local function SPAWNHORROR()
                                 "It will come back. Stay hidden until you're sure it's safe.",
                                 "Silence doesn't mean it's gone. Wait for the door to return to normal."
                             }
-                            -- Proteção para firesignal
                             local function safeFireSignal(remote, ...)
                                 if type(firesignal) == "function" then
                                     pcall(firesignal, remote, ...)
@@ -440,13 +435,14 @@ local function SPAWNHORROR()
                     end
                 end
             end
-            -- Som de impacto com duração fixa (3 segundos)
-            local soundHit = Instance.new("Sound")
-            soundHit.SoundId = "rbxassetid://123689565985768"
-            soundHit.Volume = 10
-            soundHit:Play()
-            task.wait(3)
-            soundHit:Destroy()
+            -- Toca o som de impacto SEM BLOQUEAR o movimento
+            task.spawn(function()
+                local soundHit = Instance.new("Sound")
+                soundHit.SoundId = "rbxassetid://123689565985768"
+                soundHit.Volume = 10
+                soundHit:Play()
+                game.Debris:AddItem(soundHit, 5) -- limpa depois de 5s
+            end)
             camShake:ShakeOnce(10, 8, 0, 4, 1, 6)
             if breakMove then break end
         end
@@ -495,21 +491,22 @@ local function SPAWNHORROR()
         end
     end)
 
-    -- Som final com duração fixa (5 segundos)
-    local soundHit = Instance.new("Sound")
-    soundHit.SoundId = "rbxassetid://123689565985768"
-    soundHit.Volume = 10
-    soundHit:Play()
-    task.wait(5)
-    soundHit:Destroy()
+    -- Som final (também sem bloquear)
+    task.spawn(function()
+        local soundHit = Instance.new("Sound")
+        soundHit.SoundId = "rbxassetid://123689565985768"
+        soundHit.Volume = 10
+        soundHit:Play()
+        game.Debris:AddItem(soundHit, 5)
+    end)
     camShake:ShakeOnce(10, 8, 0, 4, 2, 6)
-    task.wait(0.35)
+    task.wait(0.35) -- pequena espera para os shakes
     camShake:Shake(result.Presets.Explosion)
     camShake:Shake(result.Presets.Explosion)
     pcall(function() workspace.CurrentRooms[latestRoom.Value].Door.ClientOpen:FireServer() end)
     slam:Play()
     slam.RollOffMaxDistance = 200
-    slam.Volume = 10  -- Roblox limita a 10, então 10500 é inútil
+    slam.Volume = 10
     local slamClone = slam:Clone()
     slamClone.Parent = slam.Parent
     slamClone.Name = slam.Name .. "_Clone"
