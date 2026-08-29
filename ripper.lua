@@ -299,12 +299,12 @@ local function SPAWNHORROR()
         local baseSpeed = 150
         local speed = baseSpeed
 
-        if playerPos and (entityPos - playerPos).magnitude > 225 then
-            speed = speed * 2
+        if playerPos and (entityPos - playerPos).magnitude >= 225 then
+            speed = speed * 3
         end
 
         if nodeCount >= 6 then
-            local extra = (nodeCount - 5) * 0.1
+            local extra = (nodeCount - 5) * 0.4
             speed = speed * (1 + math.min(extra, 0.5))
         end
 
