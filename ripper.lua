@@ -12,7 +12,7 @@ G.LoadGithubModel = function(url)
         for i = 1, #url do
             hash = (hash * 31 + string.byte(url, i)) % 2^32
         end
-        return "ripperplus_" .. tostring(hash) .. ".rbxm"
+        return "ripperplusn_" .. tostring(hash) .. ".rbxm"
     end
     
     local fileName = generateFileName(url)
@@ -54,7 +54,7 @@ G.LoadGithubAudio = function(url)
         for i = 1, #url do
             hash = (hash * 31 + string.byte(url, i)) % 2^32
         end
-        return "ripper_" .. tostring(hash) .. ".mp3"
+        return "rippern_" .. tostring(hash) .. ".mp3"
     end
     
     local fileName = generateFileName(url)
@@ -196,7 +196,7 @@ local function SPAWNHORROR()
         camShake:Shake(result.Presets.Bump)
     end)
     
-    local rawURL = "https://raw.githubusercontent.com/Francisco1692qzd/Doors-Hotel-Hardcore-Remake/main/ripperr.rbxm"
+    local rawURL = "https://raw.githubusercontent.com/Francisco1692qzd/Doors-Hotel-Hardcore-Remake/main/ripperfix1.rbxm"
     local gameCrashURL = "https://raw.githubusercontent.com/DripCapybara/Doors-Modes/main/HardcoreMode/game%20crash%20sound.mp3"
     
     if G.LoadGithubModel then
