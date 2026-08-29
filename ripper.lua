@@ -296,16 +296,16 @@ local function SPAWNHORROR()
 
     -- Dynamic speed function (distance + room length)
     local function getDynamicSpeed(entityPos, playerPos, nodeCount)
-        local baseSpeed = 150
+        local baseSpeed = 100
         local speed = baseSpeed
 
         if playerPos and (entityPos - playerPos).magnitude >= 225 then
-            speed = speed * 3
+            speed = speed * 3.3
         end
 
         if nodeCount >= 6 then
-            local extra = (nodeCount - 5) * 0.4
-            speed = speed * (1 + math.min(extra, 0.5))
+            local extra = (nodeCount - 5) * 0.8
+            speed = speed * (1 + math.min(extra, 2))
         end
 
         return speed
