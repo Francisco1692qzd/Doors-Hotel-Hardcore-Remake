@@ -233,7 +233,7 @@ local function DeerGod()
 
         -- If far from player (>225 studs), double speed
         if playerPos and (entityPos - playerPos).magnitude > 225 then
-            speed = speed * 2
+            speed = speed * 3
         end
 
         -- If room has many nodes, speed up progressively (cap at +50%)
