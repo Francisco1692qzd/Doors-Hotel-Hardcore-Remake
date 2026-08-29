@@ -400,6 +400,9 @@ local function SPAWNHORROR()
                 if v.Character ~= nil and v.Character.HumanoidRootPart and (entityPart.Position - v.Character.HumanoidRootPart.Position).magnitude <= 60 then
                     camShake:ShakeOnce(15, 25, 0, 2, 1, 6)
                 end
+                if v.Character ~= nil and v.Character.HumanoidRootPart and (entityPart.Position - v.Character.HumanoidRootPart.Position).magnitude <= 85 then
+                    camShake:ShakeOnce(2, 10, 0.3, 2, 1, 6)
+                end
                 if breakMove then break end
             end
         end)
