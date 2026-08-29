@@ -223,24 +223,47 @@ local function DeerGod()
     if not entity then return end
 
     local entityPart = entity
+    
+    -- ------------------------------------------------------------
+    -- NEW: Dynamic speed function (distance + room length)
+    -- ------------------------------------------------------------
+    local function getDynamicSpeed(entityPos, playerPos, nodeCount)
+        local baseSpeed = 15   -- original ambruhspeed
+        local speed = baseSpeed
+
+        -- If far from player (>225 studs), double speed
+        if playerPos and (entityPos - playerPos).magnitude > 225 then
+            speed = speed * 2
+        end
+
+        -- If room has many nodes, speed up progressively (cap at +50%)
+        if nodeCount >= 6 then
+            local extra = (nodeCount - 5) * 0.1  -- +10% per extra node beyond 5
+            speed = speed * (1 + math.min(extra, 0.5))
+        end
+
+        return speed
+    end
+    -- ------------------------------------------------------------
+    
     local function canSeeTarget(target, size)
         if killed == true then
             return
         end
-local function isBossActive()
-    local room = latestRoom.Value
-    if room == 50 or room == 100 then return true end
-    
-    -- Check for any playing music in ReplicatedStorage that might indicate a cutscene
-    for _, sound in pairs(game.ReplicatedStorage:GetDescendants()) do
-        if sound:IsA("Sound") and sound.IsPlaying and (sound.Name:find("Music") or sound.Name == "Shade") then
-            return true
+        local function isBossActive()
+            local room = latestRoom.Value
+            if room == 50 or room == 100 then return true end
+            
+            -- Check for any playing music in ReplicatedStorage that might indicate a cutscene
+            for _, sound in pairs(game.ReplicatedStorage:GetDescendants()) do
+                if sound:IsA("Sound") and sound.IsPlaying and (sound.Name:find("Music") or sound.Name == "Shade") then
+                    return true
+                end
+            end
+            return false
         end
-    end
-    return false
-end
 
-if isBossActive() then return end
+        if isBossActive() then return end
 
         local origin = entityPart.Position
         local direction = (target.HumanoidRootPart.Position - origin).unit * size
@@ -298,11 +321,16 @@ if isBossActive() then return end
             local room = currentRooms[i]
             if room and room:FindFirstChild("Nodes") then
                 local nodes = room:FindFirstChild("Nodes")
-                for v = 1, #nodes:GetChildren() do
+                local nodeCount = #nodes:GetChildren()
+                for v = 1, nodeCount do
                     if nodes:FindFirstChild(v) then
                         local node = nodes[v]
                         local dist = (entityPart.Position - node.Position).magnitude
-                        local jerk = game.TweenService:Create(entityPart, TweenInfo.new(GetTime(dist, ambruhspeed), Enum.EasingStyle.Linear, Enum.EasingDirection.Out, 0,false,0), {CFrame = node.CFrame + ambruhheight})
+                        -- Compute dynamic speed based on distance and node count
+                        local player = game.Players.LocalPlayer
+                        local playerPos = player.Character and player.Character.HumanoidRootPart
+                        local currentSpeed = getDynamicSpeed(entityPart.Position, playerPos and playerPos.Position, nodeCount)
+                        local jerk = game.TweenService:Create(entityPart, TweenInfo.new(GetTime(dist, currentSpeed), Enum.EasingStyle.Linear, Enum.EasingDirection.Out, 0,false,0), {CFrame = node.CFrame + ambruhheight})
                         jerk:Play()
                         jerk.Completed:Wait()
                         ambruhspeed = storer
@@ -316,12 +344,6 @@ if isBossActive() then return end
     wait(0.2)
     chaseMusic:Destroy()
 	wait(1)
-	--[[local AchievementModule = game.Players.LocalPlayer.PlayerGui.MainUI.Initiator.Main_Game.RemoteListener.Modules.AchievementUnlock
-	if AchievementModule == nil then return end
-	if workspace:FindFirstChild("DeerGodAchievement") then return end
-	if not game.ReplicatedStorage:FindFirstChild("ModulesShared") then return end
-	local dataModule = require(game:GetService("ReplicatedStorage"):WaitForChild("ModulesShared"):WaitForChild("Achievements"))
-	local unlockFunc = require(AchievementModule)--]]
 	if not workspace:FindFirstChild("DeerGodAchievement") then
 		GiveAchievement("DeerGod")
 	end
