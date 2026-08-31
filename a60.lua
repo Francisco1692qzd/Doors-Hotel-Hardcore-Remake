@@ -37,7 +37,6 @@ local function getUnlockUI()
     return success and func or nil
 end
 
--- Global function to add custom achievement
 function AddAchievement(title, desc, reason, image, achname)
     local dataModule = getDataModule()
     if not dataModule then return end
@@ -54,7 +53,6 @@ function AddAchievement(title, desc, reason, image, achname)
     }
 end
 
--- Global function to trigger popup
 function GiveAchievement(name)
     local dataModule = getDataModule()
     if not dataModule then
@@ -93,7 +91,7 @@ local function loadModel(id)
             --print("✅ Depth Model Loaded successfully on attempt: " .. attempts)
         else
             --warn("⚠️ Attempt " .. attempts .. " failed to load model " .. id .. ". Retrying...")
-            task.wait(0.5) -- Small breather for the engine
+            task.wait(0.5)
         end
     end
 
@@ -107,18 +105,16 @@ end
 G.LoadGithubAudio = function(url)
     if not (writefile and getcustomasset and request) then return nil end
 
-    -- Generate consistent filename from URL
     local function generateFileName(url)
         local hash = 0
         for i = 1, #url do
             hash = (hash * 31 + string.byte(url, i)) % 2^32
         end
-        return "multimonster_" .. tostring(hash) .. ".mpeg"  -- Fixed: removed .mp3
+        return "multimonster_" .. tostring(hash) .. ".mpeg"
     end
     
     local fileName = generateFileName(url)
     
-    -- Check if file exists and return it
     local success, exists = pcall(function()
         return isfile and isfile(fileName)
     end)
@@ -129,12 +125,10 @@ G.LoadGithubAudio = function(url)
         end)
         
         if assetSuccess then
-            --print("✅ Áudio Rebound carregado do cache!")
             return assetId
         end
     end
 
-    -- Download new audio if not exists
     local response = request({
         Url = url,
         Method = "GET",
@@ -144,7 +138,6 @@ G.LoadGithubAudio = function(url)
     })
 
     if response.StatusCode ~= 200 then
-        --warn("Xeno: Falha no download. Status: " .. response.StatusCode)
         return nil
     end
     
@@ -155,11 +148,9 @@ G.LoadGithubAudio = function(url)
     end)
 
     if success then
-        --print("✅ Áudio Rebound carregado com sucesso!")
         return assetId
     end
     
-    --warn("Erro no getcustomasset: " .. tostring(assetId))
     return nil
 end
 
@@ -193,66 +184,86 @@ task.spawn(function()
     local gameData = game.ReplicatedStorage:WaitForChild("GameData")
     local latestRoom = gameData:WaitForChild("LatestRoom")
     local ambruhheight = Vector3.new(0, 3, 0)
-    local ambruhspeed = 160
-    local DEF_SPEED = 9999
+    local ambruhspeed = 230          -- base speed (dynamic)
     local randomizedtimes = math.random(4, 9)
     local killed = false
-	local PlayerGui = game.Players.LocalPlayer.PlayerGui
+    local PlayerGui = game.Players.LocalPlayer.PlayerGui
 
-    local entity = loadModel(15972282065) -- The 20-attempt loop starts here
+    local entity = loadModel(15972282065)
     if not entity then return end
     
     entity.Parent = workspace
     local pr = entity:FindFirstChildWhichIsA("BasePart") or entity:FindFirstChildWhichIsA("MeshPart")
     if not pr then return end
 
+    -- ------------------------------------------------------------
+    -- DYNAMIC SPEED FUNCTION (distance + room length)
+    -- ------------------------------------------------------------
+    local function getDynamicSpeed(entityPos, playerPos, nodeCount)
+        local baseSpeed = 230
+        local speed = baseSpeed
+
+        -- If far from player (>225 studs), double speed
+        if playerPos and (entityPos - playerPos).magnitude > 225 then
+            speed = speed * 2
+        end
+
+        -- If room has many nodes, speed up progressively (cap at +50%)
+        if nodeCount >= 6 then
+            local extra = (nodeCount - 5) * 0.1  -- +10% per extra node beyond 5
+            speed = speed * (1 + math.min(extra, 0.5))
+        end
+
+        return speed
+    end
+    -- ------------------------------------------------------------
+
     local function GetTime(dist, speed)
         return dist / speed
     end
 
-	spawn(function()
-		if not rep:FindFirstChild("ModulesClient") then return end
-		-- if not rep:FindFirstChild("FloorReplicated") then return end
-		local ROOT = "https://github.com/RegularVynixu/DOORS-Entity-Spawner-V2/raw/main"
-		local Assets = {
-			Repentance = LoadCustomInstance(ROOT.."/Assets/Repentance.rbxm"),
-			Earthquake = LoadCustomInstance(ROOT.."/Assets/Earthquake.rbxm")
-		}
-		local Modules = {
-			Module_Events = require(rep.ModulesClient.Module_Events :: ModuleScript),
-			Main_Game = require(PlayerGui.MainUI.Initiator.Main_Game :: ModuleScript)
-		}
-		local Storage = {
-    		Ambient = {},
-			DeathTypes = {
-				["Yellow"] = {"yellow", "curious"},
-				["Blue"] = {"blue", "guiding"}
-			}
-		}
-		local function Earthquake()
-    		Modules.Main_Game.camShaker:ShakeOnce(4, 12, 1, 5)
-    		Modules.Main_Game.camShaker:ShakeOnce(10, 2, 3, 3)
-    		Assets.Earthquake.SoundEarthquake:Play()
-    		local v5 = CollectionService:GetTagged("PartCeiling")
-    		local v6 = {}
-    		for _, v7 in v5 do
-        		local v8 = v7.Size.Magnitude * 0.7
-        		local v9 = math.clamp(v8, 0, 150)
-        		for _, v10 in Assets.Earthquake.Particles:GetChildren() do
-            		local v11 = v10:Clone()
-            		v11.Parent = v7
-            		v11:Emit(v9 / 10)
-            		v11.Enabled = true
-            		table.insert(v6, v11)
-        		end
-    		end
-    		task.wait(4)
-    		for _, v12 in v6 do
-        		v12.Enabled = false
-    		end
-		end
-		task.spawn(Earthquake)
-	end)
+    spawn(function()
+        if not rep:FindFirstChild("ModulesClient") then return end
+        local ROOT = "https://github.com/RegularVynixu/DOORS-Entity-Spawner-V2/raw/main"
+        local Assets = {
+            Repentance = LoadCustomInstance(ROOT.."/Assets/Repentance.rbxm"),
+            Earthquake = LoadCustomInstance(ROOT.."/Assets/Earthquake.rbxm")
+        }
+        local Modules = {
+            Module_Events = require(rep.ModulesClient.Module_Events),
+            Main_Game = require(PlayerGui.MainUI.Initiator.Main_Game)
+        }
+        local Storage = {
+            Ambient = {},
+            DeathTypes = {
+                ["Yellow"] = {"yellow", "curious"},
+                ["Blue"] = {"blue", "guiding"}
+            }
+        }
+        local function Earthquake()
+            Modules.Main_Game.camShaker:ShakeOnce(4, 12, 1, 5)
+            Modules.Main_Game.camShaker:ShakeOnce(10, 2, 3, 3)
+            Assets.Earthquake.SoundEarthquake:Play()
+            local v5 = CollectionService:GetTagged("PartCeiling")
+            local v6 = {}
+            for _, v7 in v5 do
+                local v8 = v7.Size.Magnitude * 0.7
+                local v9 = math.clamp(v8, 0, 150)
+                for _, v10 in Assets.Earthquake.Particles:GetChildren() do
+                    local v11 = v10:Clone()
+                    v11.Parent = v7
+                    v11:Emit(v9 / 10)
+                    v11.Enabled = true
+                    table.insert(v6, v11)
+                end
+            end
+            task.wait(4)
+            for _, v12 in v6 do
+                v12.Enabled = false
+            end
+        end
+        task.spawn(Earthquake)
+    end)
 
     local function canSeeTarget(target, size)
         if killed then return end
@@ -292,9 +303,13 @@ task.spawn(function()
                         local remotes = rep:FindFirstChild("RemotesFolder") or rep:FindFirstChild("Bricks")
                         if remotes and remotes:FindFirstChild("DeathHint") then
                             if remotes.Name == "RemotesFolder" then
-                                firesignal(remotes.DeathHint.OnClientEvent, hints, "Blue")
+                                if type(firesignal) == "function" then
+                                    pcall(firesignal, remotes.DeathHint.OnClientEvent, hints, "Blue")
+                                end
                             else
-                                firesignal(remotes.DeathHint.OnClientEvent, hints)
+                                if type(firesignal) == "function" then
+                                    pcall(firesignal, remotes.DeathHint.OnClientEvent, hints)
+                                end
                             end
                         end
                     end)
@@ -308,8 +323,8 @@ task.spawn(function()
     end)
 
     local gruh = workspace.CurrentRooms
-    ambruhspeed = DEF_SPEED
 
+    -- Forward pass with dynamic speed
     local function Forward()
         local limit = latestRoom.Value
         for i = 1, limit do
@@ -317,17 +332,21 @@ task.spawn(function()
             if room and room:FindFirstChild("Nodes") then
                 local nodes = room.Nodes:GetChildren()
                 table.sort(nodes, function(a,b) return tonumber(a.Name) < tonumber(b.Name) end)
+                local nodeCount = #nodes
                 for _, node in ipairs(nodes) do
                     local distance = (pr.Position - node.Position).magnitude
-                    local jerk = game.TweenService:Create(pr, TweenInfo.new(GetTime(distance, ambruhspeed), Enum.EasingStyle.Linear), {CFrame = node.CFrame + ambruhheight})
+                    -- Compute dynamic speed
+                    local playerPos = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character.HumanoidRootPart
+                    local currentSpeed = getDynamicSpeed(pr.Position, playerPos and playerPos.Position, nodeCount)
+                    local jerk = game.TweenService:Create(pr, TweenInfo.new(GetTime(distance, currentSpeed), Enum.EasingStyle.Linear), {CFrame = node.CFrame + ambruhheight})
                     jerk:Play()
                     jerk.Completed:Wait()
-                    if ambruhspeed ~= 160 then ambruhspeed = 160 end
                 end
             end
         end
     end
 
+    -- Backward pass with dynamic speed
     local function Backward()
         local limit = latestRoom.Value
         for i = limit, 1, -1 do
@@ -335,13 +354,15 @@ task.spawn(function()
             if room and room:FindFirstChild("Nodes") then
                 local nodes = room.Nodes:GetChildren()
                 table.sort(nodes, function(a,b) return tonumber(a.Name) < tonumber(b.Name) end)
+                local nodeCount = #nodes
                 for n = #nodes, 1, -1 do
                     local node = nodes[n]
                     local distance = (pr.Position - node.Position).magnitude
-                    local jerk = game.TweenService:Create(pr, TweenInfo.new(GetTime(distance, ambruhspeed), Enum.EasingStyle.Linear), {CFrame = node.CFrame + ambruhheight})
+                    local playerPos = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character.HumanoidRootPart
+                    local currentSpeed = getDynamicSpeed(pr.Position, playerPos and playerPos.Position, nodeCount)
+                    local jerk = game.TweenService:Create(pr, TweenInfo.new(GetTime(distance, currentSpeed), Enum.EasingStyle.Linear), {CFrame = node.CFrame + ambruhheight})
                     jerk:Play()
                     jerk.Completed:Wait()
-                    if ambruhspeed ~= 160 then ambruhspeed = 160 end
                 end
             end
         end
@@ -357,48 +378,11 @@ task.spawn(function()
 
     entity:Destroy()
 
-	local stingDissapear = G.LoadGithubAudio("https://raw.githubusercontent.com/Francisco1692qzd/RevivedOldHardcore/main/Multimonster_sting.mp3.mpeg")
-	task.spawn(function()
-    	--[[local AchievementModule = game.Players.LocalPlayer.PlayerGui:FindFirstChild("MainUI")
-    	if AchievementModule then
-        	AchievementModule = AchievementModule:FindFirstChild("Initiator")
-        	if AchievementModule then
-            	AchievementModule = AchievementModule:FindFirstChild("Main_Game")
-            	if AchievementModule then
-                	AchievementModule = AchievementModule:FindFirstChild("RemoteListener")
-                	if AchievementModule then
-                    	AchievementModule = AchievementModule:FindFirstChild("Modules")
-                    	if AchievementModule then
-                       	 	AchievementModule = AchievementModule:FindFirstChild("AchievementUnlock")
-                    	end
-                	end
-            	end
-        	end
-    	end
-    
-    	if AchievementModule == nil then return end
-    
-    	if workspace:FindFirstChild("A60Achievement") then return end
-    
-    	local modulesShared = game.ReplicatedStorage:FindFirstChild("ModulesShared")
-    	if not modulesShared then return end
-    
-    	local achievements = modulesShared:FindFirstChild("Achievements")
-    	if not achievements then return end
-    
-    	local dataModule = require(achievements)
-    	local unlockFunc = require(AchievementModule)
-    
-    	if not workspace:FindFirstChild("A60Achievement") then
-        	unlockFunc(nil, "Multimonster") 
-    	end
-    
-    	local ObtainedBadge = Instance.new("BoolValue")
-    	ObtainedBadge.Name = "A60Achievement"
-    	ObtainedBadge.Value = true
-   	 	ObtainedBadge.Parent = workspace --]]
-		GiveAchievement("Multimonster")
-	end)
+    local stingDissapear = G.LoadGithubAudio("https://raw.githubusercontent.com/Francisco1692qzd/RevivedOldHardcore/main/Multimonster_sting.mp3.mpeg")
+    task.spawn(function()
+        GiveAchievement("Multimonster")
+    end)
+
     local light = Instance.new("ColorCorrectionEffect", game.Lighting)
     light.Brightness, light.Saturation, light.Contrast = -0.4, 0.4, -0.5
     light.TintColor = Color3.fromRGB(255, 0, 0)
@@ -409,8 +393,4 @@ task.spawn(function()
     
     game.Debris:AddItem(light, 20)
     camShake:ShakeOnce(23, 45, 0, 16, 1, 6)
-	--local sting = Instance.new("Sound", workspace)
-	--sting.SoundId = stingDissapear
-	--sting.Volume = 2
-	--sting.PlaybackSpeed = 1.16
 end)
