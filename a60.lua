@@ -205,13 +205,13 @@ task.spawn(function()
 
         -- If far from player (>225 studs), double speed
         if playerPos and (entityPos - playerPos).magnitude > 225 then
-            speed = speed * 2
+            speed = speed * 4
         end
 
         -- If room has many nodes, speed up progressively (cap at +50%)
         if nodeCount >= 6 then
-            local extra = (nodeCount - 5) * 0.1  -- +10% per extra node beyond 5
-            speed = speed * (1 + math.min(extra, 0.5))
+            local extra = (nodeCount - 5) * 0.4  -- +10% per extra node beyond 5
+            speed = speed * (1 + math.min(extra, 1))
         end
 
         return speed
