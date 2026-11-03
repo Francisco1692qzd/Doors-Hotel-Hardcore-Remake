@@ -3,10 +3,10 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 -- [1] MODEL LOADER
 G.LoadGithubModel = function(url)
-    if not (writefile and getcustomasset and request) then return nil end
-    
+    if not (writefile and request) then return nil end
+
     local rawUrl = url:gsub("github.com", "raw.githubusercontent.com"):gsub("/blob/", "/")
-    
+
     -- Generate consistent filename from URL
     local function generateFileName(url)
         local hash = 0
@@ -15,36 +15,85 @@ G.LoadGithubModel = function(url)
         end
         return "shocker_final_fix_" .. tostring(hash) .. ".rbxm"
     end
-    
+
     local fileName = generateFileName(rawUrl)
-    
-    -- Check if file exists and try to load it
-    local success, exists = pcall(function()
-        return isfile and isfile(fileName)
-    end)
-    
-    if success and exists then
-        local assetId = getcustomasset(fileName)
-        local loadSuccess, result = pcall(function()
+
+    -- ---- Detect which asset-loading methods this executor supports ----
+    local hasGetCustomAsset = (type(getcustomasset) == "function")
+    local hasGetAsset       = (type(getasset) == "function")        -- some executors alias it
+    local hasGetCustomAssetAsync = (type(getcustomassetasync) == "function")
+
+    -- Helper: turn a local file path into a usable asset string
+    local function pathToAssetId(path)
+        -- 1) getcustomasset – the standard method (Synapse, Script-Ware, Krnl, Fluxus, etc.)
+        if hasGetCustomAsset then
+            local ok, assetId = pcall(getcustomasset, path)
+            if ok and type(assetId) == "string" and #assetId > 0 then
+                return assetId
+            end
+            -- Function exists but failed -> stop trying it, it's broken in this env
+            hasGetCustomAsset = false
+        end
+
+        -- 2) getcustomassetasync – a few executors use an async variant
+        if hasGetCustomAssetAsync then
+            local ok, assetId = pcall(getcustomassetasync, path)
+            if ok and type(assetId) == "string" and #assetId > 0 then
+                return assetId
+            end
+            hasGetCustomAssetAsync = false
+        end
+
+        -- 3) getasset – rare alias
+        if hasGetAsset then
+            local ok, assetId = pcall(getasset, path)
+            if ok and type(assetId) == "string" and #assetId > 0 then
+                return assetId
+            end
+            hasGetAsset = false
+        end
+
+        -- 4) rbxasset:// – some executors mount the writefile workspace here
+        --    (we can't validate cheaply; caller will pcall it)
+        return "rbxasset://" .. path
+    end
+
+    -- Helper: attempt to instantiate a model from a local file path
+    local function loadLocalModel(path)
+        local assetId = pathToAssetId(path)
+        if not assetId then return nil end
+
+        local ok, obj = pcall(function()
             return game:GetObjects(assetId)[1]
         end)
-        
-        if loadSuccess and result then
-            return result
-        end
+        if ok and obj then return obj end
+
+        -- Last-ditch: try passing the raw path directly
+        local ok2, obj2 = pcall(function()
+            return game:GetObjects(path)[1]
+        end)
+        if ok2 and obj2 then return obj2 end
+
+        return nil
     end
-    
-    -- Download new model if not exists or failed to load
-    local response = request({Url = rawUrl, Method = "GET"})
-    if response.StatusCode ~= 200 then return nil end
-    
-    writefile(fileName, response.Body)
-    local assetId = getcustomasset(fileName)
-    
-    local success, result = pcall(function()
-        return game:GetObjects(assetId)[1]
+
+    -- ---- Use cached file if it exists ----
+    local exists = false
+    pcall(function()
+        exists = isfile and isfile(fileName)
     end)
-    return success and result or nil
+
+    if exists then
+        local cached = loadLocalModel(fileName)
+        if cached then return cached end
+    end
+
+    -- ---- Download the model ----
+    local response = request({Url = rawUrl, Method = "GET"})
+    if not response or response.StatusCode ~= 200 then return nil end
+
+    writefile(fileName, response.Body)
+    return loadLocalModel(fileName)
 end
 
 -- Standalone functions for achievements
